@@ -8,6 +8,7 @@ import type {
   GetReviewSummary200,
   ListBusinessUpdates200,
   BusinessUpdateItem,
+  PortfolioCollection,
 } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoursTable } from './HoursTable';
@@ -35,8 +36,10 @@ interface BusinessTabsProps {
   servicesLoading: boolean;
   servicesError?: boolean;
   onRetryServices?: () => void;
-  portfolios: Record<string, unknown>[];
+  portfolios: PortfolioCollection[];
   portfoliosLoading: boolean;
+  portfoliosError?: boolean;
+  onRetryPortfolios?: () => void;
   reviews: NonNullable<ListReviews200['data']>;
   reviewsLoading: boolean;
   reviewSummary: NonNullable<GetReviewSummary200['data']> | undefined;
@@ -161,6 +164,8 @@ export function BusinessTabs(props: BusinessTabsProps) {
     onRetryServices,
     portfolios,
     portfoliosLoading,
+    portfoliosError,
+    onRetryPortfolios,
     reviews,
     reviewsLoading,
     reviewSummary,
@@ -241,7 +246,12 @@ export function BusinessTabs(props: BusinessTabsProps) {
         </TabsContent>
 
         <TabsContent value="portfolio" className="mt-0">
-          <PortfolioGrid portfolios={portfolios} isLoading={portfoliosLoading} />
+          <PortfolioGrid
+            portfolios={portfolios}
+            isLoading={portfoliosLoading}
+            isError={portfoliosError}
+            onRetry={onRetryPortfolios}
+          />
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-0 space-y-5">

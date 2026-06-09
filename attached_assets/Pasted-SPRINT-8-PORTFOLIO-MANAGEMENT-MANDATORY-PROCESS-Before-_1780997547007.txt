@@ -1,0 +1,252 @@
+SPRINT 8 — PORTFOLIO MANAGEMENT
+
+MANDATORY PROCESS
+
+Before writing any code:
+
+1. Perform a complete audit.
+2. Verify existing backend routes, DB tables, OpenAPI schemas, generated hooks, dashboard routes, public profile rendering, and media upload support.
+3. Produce an Audit Report listing:
+
+   * Fully Implemented
+   * Partially Implemented
+   * Missing
+   * Defects
+4. Do NOT write code until audit is complete.
+
+GOAL
+
+Allow business owners to manage a professional portfolio.
+
+Portfolio is one of the most important conversion features for tailors, fashion designers, fabric sellers, shoemakers, makeup artists, photographers, and all creative businesses.
+
+OWNERS MUST BE ABLE TO:
+
+* Create portfolio collections
+* Edit collections
+* Delete collections
+* Reorder collections
+* Upload portfolio images
+* Add captions
+* Add descriptions
+* Add external links
+* Set featured images
+* Toggle visibility
+* Arrange display order
+
+PUBLIC USERS MUST BE ABLE TO:
+
+* View portfolio collections
+* Open image galleries
+* View captions/descriptions
+* Navigate collection images
+* View featured work
+
+PHASE 1 — AUDIT
+
+Verify:
+
+Backend:
+
+* portfolio collections routes
+* portfolio items routes
+* ownership middleware
+* media upload support
+* OpenAPI schemas
+* generated hooks
+
+Database:
+
+* portfolio tables
+* collection tables
+* item tables
+* ordering fields
+* visibility fields
+* image fields
+
+Frontend:
+
+* dashboard placeholders
+* public profile tabs
+* existing gallery components
+* existing media components
+
+Deliver audit before implementation.
+
+PHASE 2 — BACKEND COMPLETION
+
+Implement any missing backend support.
+
+Requirements:
+
+Portfolio Collection:
+
+* id
+* businessId
+* title
+* description
+* featuredImage
+* displayOrder
+* visibility
+* createdAt
+* updatedAt
+
+Portfolio Item:
+
+* id
+* collectionId
+* imageUrl
+* caption
+* description
+* externalUrl
+* displayOrder
+* createdAt
+* updatedAt
+
+Endpoints:
+
+Collections:
+
+* GET
+* POST
+* PATCH
+* DELETE
+
+Items:
+
+* GET
+* POST
+* PATCH
+* DELETE
+
+Ownership:
+
+* use shared assertBusinessOwner helper
+* no duplicated ownership logic
+
+Marketplace isolation:
+
+* enforce marketplace ownership on all mutations
+
+OpenAPI:
+
+* complete response schemas
+* no Promise<void) generation
+* regenerate clients
+
+PHASE 3 — DASHBOARD MANAGEMENT
+
+Create:
+
+/dashboard/portfolio
+
+Capabilities:
+
+Collections List:
+
+* search
+* filter
+* sort
+* create
+* edit
+* delete
+
+Collection Form:
+
+* title
+* description
+* visibility
+* featured image
+
+Items Manager:
+
+* upload image
+* caption
+* description
+* external link
+* drag/drop ordering
+* featured toggle
+
+Media Upload:
+
+* reuse Sprint 7 upload flow
+* presign upload
+* storage key persistence
+
+UI Requirements:
+
+* loading states
+* empty states
+* error states
+* retry actions
+* optimistic updates where safe
+
+PHASE 4 — PUBLIC PROFILE
+
+Integrate Portfolio tab into Business Profile.
+
+Requirements:
+
+Portfolio tab:
+
+* gallery grid
+* featured collection section
+* collection cards
+* image preview modal
+* keyboard navigation
+* mobile responsive
+
+Loading:
+
+* skeletons
+
+Errors:
+
+* retry support
+
+Empty:
+
+* professional empty state
+
+PHASE 5 — SEARCH INTEGRATION
+
+Verify whether portfolio content should appear in search.
+
+If backend already supports it:
+
+* wire it
+
+If not:
+
+* document recommendation only
+* do not create Sprint 9 work inside Sprint 8
+
+PHASE 6 — VERIFICATION
+
+Required:
+
+* regenerate codegen
+* run all typechecks
+* run build
+* verify routes
+* verify generated hooks
+* verify ownership enforcement
+* verify media uploads
+* verify public profile rendering
+
+DELIVERABLE FORMAT
+
+Provide:
+
+1. Audit Report
+2. Files Created
+3. Files Modified
+4. Backend Changes
+5. Frontend Changes
+6. Verification Results
+7. Remaining Blockers
+8. Sprint Completion %
+
+Do not skip the audit.
+Do not invent functionality.
+Fix discovered defects before adding new functionality.

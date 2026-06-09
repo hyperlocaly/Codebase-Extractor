@@ -17,6 +17,44 @@ export interface ApiError {
   error: ApiErrorError;
 }
 
+export type PortfolioStatus = typeof PortfolioStatus[keyof typeof PortfolioStatus];
+
+
+export const PortfolioStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface Portfolio {
+  id: string;
+  businessId: string;
+  title: string;
+  description?: string | null;
+  featuredImage?: string | null;
+  status: PortfolioStatus;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface PortfolioItem {
+  id: string;
+  portfolioId: string;
+  mediaUrl: string;
+  thumbnailUrl?: string | null;
+  caption?: string | null;
+  description?: string | null;
+  externalUrl?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PortfolioCollection = Portfolio & {
+  items?: PortfolioItem[];
+};
+
 export interface HealthStatus {
   status: string;
 }
@@ -897,12 +935,20 @@ marketplace: string;
 
 export type ListPortfoliosParams = {
 marketplace: string;
+status?: ListPortfoliosStatus;
 };
 
-export type ListPortfolios200DataItem = { [key: string]: unknown };
+export type ListPortfoliosStatus = typeof ListPortfoliosStatus[keyof typeof ListPortfoliosStatus];
+
+
+export const ListPortfoliosStatus = {
+  published: 'published',
+  draft: 'draft',
+  all: 'all',
+} as const;
 
 export type ListPortfolios200 = {
-  data?: ListPortfolios200DataItem[];
+  data?: PortfolioCollection[];
 };
 
 export type CreatePortfolioParams = {
@@ -912,7 +958,12 @@ marketplace: string;
 export type CreatePortfolioBody = {
   title: string;
   description?: string;
+  featuredImage?: string;
   sortOrder?: number;
+};
+
+export type CreatePortfolio201 = {
+  data?: Portfolio;
 };
 
 export type AddPortfolioItemParams = {
@@ -923,21 +974,56 @@ export type AddPortfolioItemBody = {
   mediaUrl: string;
   thumbnailUrl?: string;
   caption?: string;
+  description?: string;
+  externalUrl?: string;
   sortOrder?: number;
+};
+
+export type AddPortfolioItem201 = {
+  data?: PortfolioItem;
 };
 
 export type UpdatePortfolioParams = {
 marketplace: string;
 };
 
+export type UpdatePortfolioBodyStatus = typeof UpdatePortfolioBodyStatus[keyof typeof UpdatePortfolioBodyStatus];
+
+
+export const UpdatePortfolioBodyStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
 export type UpdatePortfolioBody = {
   title?: string;
   description?: string;
+  featuredImage?: string;
+  status?: UpdatePortfolioBodyStatus;
   sortOrder?: number;
+};
+
+export type UpdatePortfolio200 = {
+  data?: Portfolio;
 };
 
 export type DeletePortfolioParams = {
 marketplace: string;
+};
+
+export type UpdatePortfolioItemParams = {
+marketplace: string;
+};
+
+export type UpdatePortfolioItemBody = {
+  caption?: string;
+  description?: string;
+  externalUrl?: string;
+  sortOrder?: number;
+};
+
+export type UpdatePortfolioItem200 = {
+  data?: PortfolioItem;
 };
 
 export type DeletePortfolioItemParams = {

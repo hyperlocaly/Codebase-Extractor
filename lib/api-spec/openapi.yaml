@@ -1440,7 +1440,7 @@ paths:
     get:
       operationId: listPortfolios
       tags: [portfolio]
-      summary: List published portfolios for a business
+      summary: List portfolios for a business (public returns published; owners may pass status=all or status=draft)
       parameters:
         - name: businessId
           in: path
@@ -1453,6 +1453,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [published, draft, all]
+            default: published
       responses:
         "200":
           description: Portfolio list with items
@@ -1464,7 +1471,7 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
+                      $ref: "#/components/schemas/PortfolioCollection"
     post:
       operationId: createPortfolio
       tags: [portfolio]
@@ -1495,11 +1502,25 @@ paths:
                   type: string
                 description:
                   type: string
+                featuredImage:
+                  type: string
+                  format: uri
                 sortOrder:
                   type: integer
       responses:
         "201":
           description: Portfolio created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Portfolio"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
   /v1/businesses/{businessId}/portfolio/{id}/items:
     post:
@@ -1542,11 +1563,29 @@ paths:
                   format: uri
                 caption:
                   type: string
+                description:
+                  type: string
+                externalUrl:
+                  type: string
+                  format: uri
                 sortOrder:
                   type: integer
       responses:
         "201":
           description: Item added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/PortfolioItem"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /v1/businesses/{businessId}/portfolio/{id}:
     patch:
@@ -1584,11 +1623,24 @@ paths:
                   type: string
                 description:
                   type: string
+                featuredImage:
+                  type: string
+                  format: uri
+                status:
+                  type: string
+                  enum: [draft, published]
                 sortOrder:
                   type: integer
       responses:
         "200":
           description: Portfolio updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Portfolio"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "403":
@@ -1630,6 +1682,68 @@ paths:
           $ref: "#/components/responses/NotFoundError"
 
   /v1/businesses/{businessId}/portfolio/{id}/items/{itemId}:
+    patch:
+      operationId: updatePortfolioItem
+      tags: [portfolio]
+      summary: Update a portfolio item (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                caption:
+                  type: string
+                description:
+                  type: string
+                externalUrl:
+                  type: string
+                  format: uri
+                sortOrder:
+                  type: integer
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/PortfolioItem"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
     delete:
       operationId: deletePortfolioItem
       tags: [portfolio]
@@ -3521,6 +3635,87 @@ components:
               type: string
             details:
               type: object
+
+    Portfolio:
+      type: object
+      required: [id, businessId, title, status, sortOrder, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        featuredImage:
+          type: string
+          format: uri
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published]
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    PortfolioItem:
+      type: object
+      required: [id, portfolioId, mediaUrl, sortOrder, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        portfolioId:
+          type: string
+          format: uuid
+        mediaUrl:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+          nullable: true
+        caption:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        externalUrl:
+          type: string
+          format: uri
+          nullable: true
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PortfolioCollection:
+      allOf:
+        - $ref: "#/components/schemas/Portfolio"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/PortfolioItem"
 
     HealthStatus:
       type: object

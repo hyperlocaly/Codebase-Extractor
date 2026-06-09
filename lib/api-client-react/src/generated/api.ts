@@ -22,6 +22,7 @@ import type {
 import type {
   AddBusinessServiceAreaBody,
   AddBusinessServiceAreaParams,
+  AddPortfolioItem201,
   AddPortfolioItemBody,
   AddPortfolioItemParams,
   AdminAnalyticsSearchParams,
@@ -53,6 +54,7 @@ import type {
   CreateBusinessUpdateParams,
   CreateClaimRequestBody,
   CreateClaimRequestParams,
+  CreatePortfolio201,
   CreatePortfolioBody,
   CreatePortfolioParams,
   CreateProduct201,
@@ -168,7 +170,11 @@ import type {
   UpdateBusinessRequest,
   UpdateBusinessVerificationBody,
   UpdateBusinessVerificationParams,
+  UpdatePortfolio200,
   UpdatePortfolioBody,
+  UpdatePortfolioItem200,
+  UpdatePortfolioItemBody,
+  UpdatePortfolioItemParams,
   UpdatePortfolioParams,
   UpdateProduct200,
   UpdateProductParams,
@@ -3575,7 +3581,7 @@ export const getListPortfoliosUrl = (businessId: string,
 }
 
 /**
- * @summary List published portfolios for a business
+ * @summary List portfolios for a business (public returns published; owners may pass status=all or status=draft)
  */
 export const listPortfolios = async (businessId: string,
     params: ListPortfoliosParams, options?: RequestInit): Promise<ListPortfolios200> => {
@@ -3625,7 +3631,7 @@ export type ListPortfoliosQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List published portfolios for a business
+ * @summary List portfolios for a business (public returns published; owners may pass status=all or status=draft)
  */
 
 export function useListPortfolios<TData = Awaited<ReturnType<typeof listPortfolios>>, TError = ErrorType<unknown>>(
@@ -3668,9 +3674,9 @@ export const getCreatePortfolioUrl = (businessId: string,
  */
 export const createPortfolio = async (businessId: string,
     createPortfolioBody: CreatePortfolioBody,
-    params: CreatePortfolioParams, options?: RequestInit): Promise<void> => {
+    params: CreatePortfolioParams, options?: RequestInit): Promise<CreatePortfolio201> => {
 
-  return customFetch<void>(getCreatePortfolioUrl(businessId,params),
+  return customFetch<CreatePortfolio201>(getCreatePortfolioUrl(businessId,params),
   {
     ...options,
     method: 'POST',
@@ -3683,7 +3689,7 @@ export const createPortfolio = async (businessId: string,
 
 
 
-export const getCreatePortfolioMutationOptions = <TError = ErrorType<unknown>,
+export const getCreatePortfolioMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPortfolio>>, TError,{businessId: string;data: BodyType<CreatePortfolioBody>;params: CreatePortfolioParams}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createPortfolio>>, TError,{businessId: string;data: BodyType<CreatePortfolioBody>;params: CreatePortfolioParams}, TContext> => {
 
@@ -3712,12 +3718,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreatePortfolioMutationResult = NonNullable<Awaited<ReturnType<typeof createPortfolio>>>
     export type CreatePortfolioMutationBody = BodyType<CreatePortfolioBody>
-    export type CreatePortfolioMutationError = ErrorType<unknown>
+    export type CreatePortfolioMutationError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse>
 
     /**
  * @summary Create a portfolio collection (owner only)
  */
-export const useCreatePortfolio = <TError = ErrorType<unknown>,
+export const useCreatePortfolio = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPortfolio>>, TError,{businessId: string;data: BodyType<CreatePortfolioBody>;params: CreatePortfolioParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createPortfolio>>,
@@ -3751,9 +3757,9 @@ export const getAddPortfolioItemUrl = (businessId: string,
 export const addPortfolioItem = async (businessId: string,
     id: string,
     addPortfolioItemBody: AddPortfolioItemBody,
-    params: AddPortfolioItemParams, options?: RequestInit): Promise<void> => {
+    params: AddPortfolioItemParams, options?: RequestInit): Promise<AddPortfolioItem201> => {
 
-  return customFetch<void>(getAddPortfolioItemUrl(businessId,id,params),
+  return customFetch<AddPortfolioItem201>(getAddPortfolioItemUrl(businessId,id,params),
   {
     ...options,
     method: 'POST',
@@ -3766,7 +3772,7 @@ export const addPortfolioItem = async (businessId: string,
 
 
 
-export const getAddPortfolioItemMutationOptions = <TError = ErrorType<unknown>,
+export const getAddPortfolioItemMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPortfolioItem>>, TError,{businessId: string;id: string;data: BodyType<AddPortfolioItemBody>;params: AddPortfolioItemParams}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof addPortfolioItem>>, TError,{businessId: string;id: string;data: BodyType<AddPortfolioItemBody>;params: AddPortfolioItemParams}, TContext> => {
 
@@ -3795,12 +3801,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type AddPortfolioItemMutationResult = NonNullable<Awaited<ReturnType<typeof addPortfolioItem>>>
     export type AddPortfolioItemMutationBody = BodyType<AddPortfolioItemBody>
-    export type AddPortfolioItemMutationError = ErrorType<unknown>
+    export type AddPortfolioItemMutationError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>
 
     /**
  * @summary Add an item to a portfolio (owner only)
  */
-export const useAddPortfolioItem = <TError = ErrorType<unknown>,
+export const useAddPortfolioItem = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPortfolioItem>>, TError,{businessId: string;id: string;data: BodyType<AddPortfolioItemBody>;params: AddPortfolioItemParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof addPortfolioItem>>,
@@ -3834,9 +3840,9 @@ export const getUpdatePortfolioUrl = (businessId: string,
 export const updatePortfolio = async (businessId: string,
     id: string,
     updatePortfolioBody: UpdatePortfolioBody,
-    params: UpdatePortfolioParams, options?: RequestInit): Promise<void> => {
+    params: UpdatePortfolioParams, options?: RequestInit): Promise<UpdatePortfolio200> => {
 
-  return customFetch<void>(getUpdatePortfolioUrl(businessId,id,params),
+  return customFetch<UpdatePortfolio200>(getUpdatePortfolioUrl(businessId,id,params),
   {
     ...options,
     method: 'PATCH',
@@ -3973,6 +3979,91 @@ export const useDeletePortfolio = <TError = ErrorType<UnauthorizedErrorResponse 
         TContext
       > => {
       return useMutation(getDeletePortfolioMutationOptions(options));
+    }
+
+export const getUpdatePortfolioItemUrl = (businessId: string,
+    id: string,
+    itemId: string,
+    params: UpdatePortfolioItemParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/businesses/${businessId}/portfolio/${id}/items/${itemId}?${stringifiedParams}` : `/api/v1/businesses/${businessId}/portfolio/${id}/items/${itemId}`
+}
+
+/**
+ * @summary Update a portfolio item (owner only)
+ */
+export const updatePortfolioItem = async (businessId: string,
+    id: string,
+    itemId: string,
+    updatePortfolioItemBody: UpdatePortfolioItemBody,
+    params: UpdatePortfolioItemParams, options?: RequestInit): Promise<UpdatePortfolioItem200> => {
+
+  return customFetch<UpdatePortfolioItem200>(getUpdatePortfolioItemUrl(businessId,id,itemId,params),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updatePortfolioItemBody,)
+  }
+);}
+
+
+
+
+export const getUpdatePortfolioItemMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortfolioItem>>, TError,{businessId: string;id: string;itemId: string;data: BodyType<UpdatePortfolioItemBody>;params: UpdatePortfolioItemParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePortfolioItem>>, TError,{businessId: string;id: string;itemId: string;data: BodyType<UpdatePortfolioItemBody>;params: UpdatePortfolioItemParams}, TContext> => {
+
+const mutationKey = ['updatePortfolioItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePortfolioItem>>, {businessId: string;id: string;itemId: string;data: BodyType<UpdatePortfolioItemBody>;params: UpdatePortfolioItemParams}> = (props) => {
+          const {businessId,id,itemId,data,params} = props ?? {};
+
+          return  updatePortfolioItem(businessId,id,itemId,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePortfolioItemMutationResult = NonNullable<Awaited<ReturnType<typeof updatePortfolioItem>>>
+    export type UpdatePortfolioItemMutationBody = BodyType<UpdatePortfolioItemBody>
+    export type UpdatePortfolioItemMutationError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>
+
+    /**
+ * @summary Update a portfolio item (owner only)
+ */
+export const useUpdatePortfolioItem = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortfolioItem>>, TError,{businessId: string;id: string;itemId: string;data: BodyType<UpdatePortfolioItemBody>;params: UpdatePortfolioItemParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePortfolioItem>>,
+        TError,
+        {businessId: string;id: string;itemId: string;data: BodyType<UpdatePortfolioItemBody>;params: UpdatePortfolioItemParams},
+        TContext
+      > => {
+      return useMutation(getUpdatePortfolioItemMutationOptions(options));
     }
 
 export const getDeletePortfolioItemUrl = (businessId: string,

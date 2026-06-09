@@ -1108,20 +1108,45 @@ export const DeleteServiceQueryParams = zod.object({
 
 
 /**
- * @summary List published portfolios for a business
+ * @summary List portfolios for a business (public returns published; owners may pass status=all or status=draft)
  */
 export const ListPortfoliosParams = zod.object({
   "businessId": zod.coerce.string().uuid()
 })
 
+export const listPortfoliosQueryStatusDefault = `published`;
+
 export const ListPortfoliosQueryParams = zod.object({
-  "marketplace": zod.coerce.string()
+  "marketplace": zod.coerce.string(),
+  "status": zod.enum(['published', 'draft', 'all']).default(listPortfoliosQueryStatusDefault)
 })
 
 export const ListPortfoliosResponse = zod.object({
   "data": zod.array(zod.object({
-
-}).passthrough()).optional()
+  "id": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "featuredImage": zod.string().url().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "deletedAt": zod.coerce.date().nullish()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "portfolioId": zod.string().uuid(),
+  "mediaUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url().nullish(),
+  "caption": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "externalUrl": zod.string().url().nullish(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})).optional()
+}))).optional()
 })
 
 
@@ -1139,6 +1164,7 @@ export const CreatePortfolioQueryParams = zod.object({
 export const CreatePortfolioBody = zod.object({
   "title": zod.string(),
   "description": zod.string().optional(),
+  "featuredImage": zod.string().url().optional(),
   "sortOrder": zod.number().optional()
 })
 
@@ -1159,6 +1185,8 @@ export const AddPortfolioItemBody = zod.object({
   "mediaUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url().optional(),
   "caption": zod.string().optional(),
+  "description": zod.string().optional(),
+  "externalUrl": zod.string().url().optional(),
   "sortOrder": zod.number().optional()
 })
 
@@ -1178,7 +1206,24 @@ export const UpdatePortfolioQueryParams = zod.object({
 export const UpdatePortfolioBody = zod.object({
   "title": zod.string().optional(),
   "description": zod.string().optional(),
+  "featuredImage": zod.string().url().optional(),
+  "status": zod.enum(['draft', 'published']).optional(),
   "sortOrder": zod.number().optional()
+})
+
+export const UpdatePortfolioResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "featuredImage": zod.string().url().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "deletedAt": zod.coerce.date().nullish()
+}).optional()
 })
 
 
@@ -1192,6 +1237,42 @@ export const DeletePortfolioParams = zod.object({
 
 export const DeletePortfolioQueryParams = zod.object({
   "marketplace": zod.coerce.string()
+})
+
+
+/**
+ * @summary Update a portfolio item (owner only)
+ */
+export const UpdatePortfolioItemParams = zod.object({
+  "businessId": zod.coerce.string().uuid(),
+  "id": zod.coerce.string().uuid(),
+  "itemId": zod.coerce.string().uuid()
+})
+
+export const UpdatePortfolioItemQueryParams = zod.object({
+  "marketplace": zod.coerce.string()
+})
+
+export const UpdatePortfolioItemBody = zod.object({
+  "caption": zod.string().optional(),
+  "description": zod.string().optional(),
+  "externalUrl": zod.string().url().optional(),
+  "sortOrder": zod.number().optional()
+})
+
+export const UpdatePortfolioItemResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string().uuid(),
+  "portfolioId": zod.string().uuid(),
+  "mediaUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url().nullish(),
+  "caption": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "externalUrl": zod.string().url().nullish(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).optional()
 })
 
 

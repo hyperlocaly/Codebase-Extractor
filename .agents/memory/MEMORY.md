@@ -1,2 +1,4 @@
 - [Sprint 7 gaps closed](sprint7-gaps.md) — imageUrl on products/services, status persistence fix, shared assertBusinessOwner, dashboard search/filter, error states in ProfilePage.
 - [useListCategories params](list-categories-params.md) — ListCategoriesParams has only `parent?: string`, no marketplace field; hook can be called with no args.
+- [Sprint 8 portfolio implementation](sprint8-portfolio.md) — DB schema additions, backend route fixes, OpenAPI schema updates, dashboard PortfolioPage, PortfolioGrid enhancements.
+- [Workflow startup](workflow-startup.md) — API needs PORT=8080 inline; frontend needs PORT=8081 BASE_PATH=/__mockup; no artifact.toml at root level; push DB schema with pnpm --filter @workspace/db run push.

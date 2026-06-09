@@ -141,7 +141,12 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
     { marketplace: MARKETPLACE_SLUG, limit: 20 },
   );
 
-  const { data: portfoliosData, isLoading: portfoliosLoading } = useListPortfolios(
+  const {
+    data: portfoliosData,
+    isLoading: portfoliosLoading,
+    isError: portfoliosError,
+    refetch: refetchPortfolios,
+  } = useListPortfolios(
     business.id,
     { marketplace: MARKETPLACE_SLUG },
   );
@@ -166,7 +171,7 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
   const contacts = (contactsData as ListBusinessContacts200 | undefined)?.data ?? [];
   const products = (productsData as ListProducts200 | undefined)?.data ?? [];
   const services = (servicesData as ListServices200 | undefined)?.data ?? [];
-  const portfolios = (portfoliosData?.data ?? []) as Record<string, unknown>[];
+  const portfolios = portfoliosData?.data ?? [];
   const reviews = reviewsData?.data ?? [];
   const reviewSummary = (reviewSummaryData as GetReviewSummary200 | undefined)?.data;
   const updates = (updatesData as ListBusinessUpdates200 | undefined)?.data ?? [];
@@ -190,6 +195,8 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
         onRetryServices={refetchServices}
         portfolios={portfolios}
         portfoliosLoading={portfoliosLoading}
+        portfoliosError={portfoliosError}
+        onRetryPortfolios={refetchPortfolios}
         reviews={reviews}
         reviewsLoading={reviewsLoading}
         reviewSummary={reviewSummary}
