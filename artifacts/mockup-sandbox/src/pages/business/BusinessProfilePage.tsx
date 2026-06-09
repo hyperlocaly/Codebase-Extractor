@@ -120,17 +120,13 @@ function BusinessActionBar({ business }: { business: BusinessDetail }) {
   const [isUnsaving, setIsUnsaving] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
 
-  const savedQK = getListSavedItemsQueryKey({ marketplace: MARKETPLACE_SLUG, limit: 100 });
-
-  const { data: savedData } = useListSavedItems(
-    { marketplace: MARKETPLACE_SLUG, limit: 100 },
-    {
-      query: {
-        enabled: isAuthenticated,
-        queryKey: savedQK,
-      },
+  const savedItemsParams = { marketplace: MARKETPLACE_SLUG, limit: 100 };
+  const { data: savedData } = useListSavedItems(savedItemsParams, {
+    query: {
+      queryKey: getListSavedItemsQueryKey(savedItemsParams),
+      enabled: isAuthenticated,
     },
-  );
+  });
 
   const saveItem = useSaveItem();
   const removeSavedItem = useRemoveSavedItem();
@@ -146,6 +142,9 @@ function BusinessActionBar({ business }: { business: BusinessDetail }) {
     isAuthenticated &&
     (!business.claimStatus || business.claimStatus === 'unclaimed');
 
+  // Use base key prefix to bust ALL saved-items queries regardless of params
+  const SAVED_BASE_KEY = '/api/v1/saved-items';
+
   async function handleSave() {
     setIsSaving(true);
     try {
@@ -153,12 +152,12 @@ function BusinessActionBar({ business }: { business: BusinessDetail }) {
         data: { entityType: 'business', entityId: business.id },
         params: { marketplace: MARKETPLACE_SLUG },
       });
-      queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey({ marketplace: MARKETPLACE_SLUG }) });
+      queryClient.invalidateQueries({ queryKey: [SAVED_BASE_KEY] });
       toast.success('Business saved to your list.');
     } catch (err: any) {
       if (err?.status === 409) {
         toast.info('Already in your saved list.');
-        queryClient.invalidateQueries({ queryKey: savedQK });
+        queryClient.invalidateQueries({ queryKey: [SAVED_BASE_KEY] });
       } else {
         toast.error('Failed to save. Please try again.');
       }
@@ -175,7 +174,7 @@ function BusinessActionBar({ business }: { business: BusinessDetail }) {
         id: existingSave.id,
         params: { marketplace: MARKETPLACE_SLUG },
       });
-      queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey({ marketplace: MARKETPLACE_SLUG }) });
+      queryClient.invalidateQueries({ queryKey: [SAVED_BASE_KEY] });
       toast.success('Removed from saved items.');
     } catch {
       toast.error('Failed to unsave. Please try again.');

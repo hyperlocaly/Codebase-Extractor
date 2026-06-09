@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useListNotifications,
@@ -34,6 +34,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+const NOTIF_BASE_KEY = '/api/v1/notifications';
 
 interface NotifRecord {
   id: string;
@@ -183,39 +185,77 @@ function LoadingSkeleton() {
   );
 }
 
+type FilterType = 'all' | 'unread';
+
+const PAGE_LIMIT = 20;
+
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, setFilter] = useState<FilterType>('all');
   const [pendingDelete, setPendingDelete] = useState<NotifRecord | null>(null);
   const [actionIds, setActionIds] = useState<Set<string>>(new Set());
 
-  const listQK = getListNotificationsQueryKey(
-    filter === 'unread' ? { unread: 'true' as const } : undefined,
-  );
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [allNotifs, setAllNotifs] = useState<NotifRecord[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const isFirstPageRef = useRef(true);
+
   const unreadQK = getUnreadNotificationCountQueryKey();
 
-  const { data, isLoading, isError, refetch } = useListNotifications(
-    filter === 'unread' ? { unread: 'true' as const } : undefined,
-    {
-      query: {
-        queryKey: listQK,
-        refetchInterval: 30_000,
-      },
+  const queryParams =
+    filter === 'unread'
+      ? { unread: 'true' as const, limit: PAGE_LIMIT, ...(cursor ? { cursor } : {}) }
+      : { limit: PAGE_LIMIT, ...(cursor ? { cursor } : {}) };
+
+  const { data, isLoading, isError, refetch } = useListNotifications(queryParams, {
+    query: {
+      queryKey: getListNotificationsQueryKey(queryParams),
+      refetchInterval: 30_000,
     },
-  );
+  });
 
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotif = useDeleteNotification();
 
-  const notifs = ((data as any)?.data ?? []) as NotifRecord[];
-  const pagination = (data as any)?.pagination as
-    | { hasMore: boolean; nextCursor: string | null }
-    | undefined;
-  const unreadCount = notifs.filter((n) => !n.readAt).length;
+  // Accumulate notifications across pages
+  useEffect(() => {
+    if (!data) return;
+    const page = ((data as any)?.data ?? []) as NotifRecord[];
+    const pagination = (data as any)?.pagination as
+      | { hasMore: boolean; nextCursor: string | null }
+      | undefined;
 
-  function invalidate() {
-    queryClient.invalidateQueries({ queryKey: getListNotificationsQueryKey() });
+    if (isFirstPageRef.current) {
+      setAllNotifs(page);
+    } else {
+      setAllNotifs((prev) => {
+        const existingIds = new Set(prev.map((n) => n.id));
+        return [...prev, ...page.filter((n) => !existingIds.has(n.id))];
+      });
+    }
+    setHasMore(pagination?.hasMore ?? false);
+    setNextCursor(pagination?.nextCursor ?? null);
+  }, [data]);
+
+  // Reset accumulation when filter changes
+  function switchFilter(f: FilterType) {
+    isFirstPageRef.current = true;
+    setFilter(f);
+    setCursor(undefined);
+    setAllNotifs([]);
+  }
+
+  function handleLoadMore() {
+    if (nextCursor) {
+      isFirstPageRef.current = false;
+      setCursor(nextCursor);
+    }
+  }
+
+  function invalidateAll() {
+    queryClient.invalidateQueries({ queryKey: [NOTIF_BASE_KEY] });
     queryClient.invalidateQueries({ queryKey: unreadQK });
   }
 
@@ -223,7 +263,13 @@ export default function NotificationsPage() {
     setActionIds((s) => new Set(s).add(`read-${notif.id}`));
     try {
       await markRead.mutateAsync({ id: notif.id });
-      invalidate();
+      // Optimistically mark as read in local state
+      setAllNotifs((prev) =>
+        prev.map((n) =>
+          n.id === notif.id ? { ...n, readAt: new Date().toISOString() } : n,
+        ),
+      );
+      invalidateAll();
     } catch {
       toast.error('Failed to mark as read.');
     } finally {
@@ -238,7 +284,9 @@ export default function NotificationsPage() {
   async function handleMarkAllRead() {
     try {
       await markAllRead.mutateAsync();
-      invalidate();
+      // Optimistically mark all as read in local state
+      setAllNotifs((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+      invalidateAll();
       toast.success('All notifications marked as read.');
     } catch {
       toast.error('Failed to mark all as read.');
@@ -252,7 +300,9 @@ export default function NotificationsPage() {
     setActionIds((s) => new Set(s).add(`del-${notif.id}`));
     try {
       await deleteNotif.mutateAsync({ id: notif.id });
-      invalidate();
+      // Remove from local state immediately
+      setAllNotifs((prev) => prev.filter((n) => n.id !== notif.id));
+      invalidateAll();
     } catch {
       toast.error('Failed to delete notification.');
     } finally {
@@ -263,6 +313,9 @@ export default function NotificationsPage() {
       });
     }
   }
+
+  const unreadCount = allNotifs.filter((n) => !n.readAt).length;
+  const showLoading = isLoading && allNotifs.length === 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
@@ -298,14 +351,14 @@ export default function NotificationsPage() {
         <Button
           variant={filter === 'all' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setFilter('all')}
+          onClick={() => switchFilter('all')}
         >
           All
         </Button>
         <Button
           variant={filter === 'unread' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setFilter('unread')}
+          onClick={() => switchFilter('unread')}
         >
           Unread
           {unreadCount > 0 && (
@@ -316,18 +369,27 @@ export default function NotificationsPage() {
         </Button>
       </div>
 
-      {isLoading ? (
+      {showLoading ? (
         <LoadingSkeleton />
-      ) : isError ? (
+      ) : isError && allNotifs.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed py-14 text-center">
           <AlertCircle className="h-8 w-8 text-destructive/50" />
           <p className="text-sm text-muted-foreground">Failed to load notifications.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              isFirstPageRef.current = true;
+              setCursor(undefined);
+              setAllNotifs([]);
+              refetch();
+            }}
+          >
             <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             Try again
           </Button>
         </div>
-      ) : notifs.length === 0 ? (
+      ) : allNotifs.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed bg-muted/10 py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
             <BellOff className="h-7 w-7 text-muted-foreground/30" />
@@ -343,7 +405,7 @@ export default function NotificationsPage() {
             </p>
           </div>
           {filter === 'unread' && (
-            <Button variant="outline" size="sm" onClick={() => setFilter('all')}>
+            <Button variant="outline" size="sm" onClick={() => switchFilter('all')}>
               View all notifications
             </Button>
           )}
@@ -351,7 +413,7 @@ export default function NotificationsPage() {
       ) : (
         <>
           <div className="space-y-2">
-            {notifs.map((notif) => (
+            {allNotifs.map((notif) => (
               <NotifCard
                 key={notif.id}
                 notif={notif}
@@ -363,10 +425,22 @@ export default function NotificationsPage() {
             ))}
           </div>
 
-          {pagination?.hasMore && (
+          {hasMore && nextCursor && (
             <div className="flex justify-center pt-2">
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
-                Load more
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  'Load more'
+                )}
               </Button>
             </div>
           )}

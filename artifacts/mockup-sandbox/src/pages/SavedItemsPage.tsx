@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -31,6 +31,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const SAVED_ITEMS_BASE_KEY = '/api/v1/saved-items';
 
 interface SavedItem {
   id: string;
@@ -128,25 +130,59 @@ function LoadingSkeleton() {
   );
 }
 
+const PAGE_LIMIT = 20;
+
 export default function SavedItemsPage() {
   const queryClient = useQueryClient();
   const [pendingRemove, setPendingRemove] = useState<SavedItem | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [cursor, setCursor] = useState<string | undefined>();
 
-  const listParams = { marketplace: MARKETPLACE_SLUG, limit: 20, ...(cursor ? { cursor } : {}) };
-  const savedQK = getListSavedItemsQueryKey(listParams);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [allItems, setAllItems] = useState<SavedItem[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const isFirstPageRef = useRef(true);
 
-  const { data, isLoading, isError, refetch } = useListSavedItems(listParams, {
-    query: { queryKey: savedQK },
+  const queryParams = { marketplace: MARKETPLACE_SLUG, limit: PAGE_LIMIT, ...(cursor ? { cursor } : {}) };
+
+  const { data, isLoading, isError, refetch } = useListSavedItems(queryParams, {
+    query: { queryKey: getListSavedItemsQueryKey(queryParams) },
   });
 
   const removeMutation = useRemoveSavedItem();
 
-  const items = ((data as any)?.data ?? []) as SavedItem[];
-  const pagination = (data as any)?.pagination as
-    | { hasMore: boolean; nextCursor: string | null }
-    | undefined;
+  useEffect(() => {
+    if (!data) return;
+    const page = ((data as any)?.data ?? []) as SavedItem[];
+    const pagination = (data as any)?.pagination as
+      | { hasMore: boolean; nextCursor: string | null }
+      | undefined;
+
+    if (isFirstPageRef.current) {
+      setAllItems(page);
+    } else {
+      setAllItems((prev) => {
+        const existingIds = new Set(prev.map((i) => i.id));
+        return [...prev, ...page.filter((i) => !existingIds.has(i.id))];
+      });
+    }
+    setHasMore(pagination?.hasMore ?? false);
+    setNextCursor(pagination?.nextCursor ?? null);
+  }, [data]);
+
+  function handleLoadMore() {
+    if (nextCursor) {
+      isFirstPageRef.current = false;
+      setCursor(nextCursor);
+    }
+  }
+
+  function handleRefresh() {
+    isFirstPageRef.current = true;
+    setCursor(undefined);
+    setAllItems([]);
+    refetch();
+  }
 
   async function handleConfirmRemove() {
     if (!pendingRemove) return;
@@ -159,13 +195,18 @@ export default function SavedItemsPage() {
         params: { marketplace: MARKETPLACE_SLUG },
       });
       toast.success('Removed from saved items.');
-      queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey({ marketplace: MARKETPLACE_SLUG }) });
+      // Remove from local state immediately
+      setAllItems((prev) => prev.filter((i) => i.id !== item.id));
+      // Invalidate all saved-items queries by base key
+      queryClient.invalidateQueries({ queryKey: [SAVED_ITEMS_BASE_KEY] });
     } catch {
       toast.error('Failed to remove. Please try again.');
     } finally {
       setRemovingId(null);
     }
   }
+
+  const showLoading = isLoading && allItems.length === 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
@@ -179,18 +220,18 @@ export default function SavedItemsPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {showLoading ? (
         <LoadingSkeleton />
-      ) : isError ? (
+      ) : isError && allItems.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed py-14 text-center">
           <AlertCircle className="h-8 w-8 text-destructive/50" />
           <p className="text-sm text-muted-foreground">Failed to load saved items.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             Try again
           </Button>
         </div>
-      ) : items.length === 0 ? (
+      ) : allItems.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed bg-muted/10 py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
             <Bookmark className="h-7 w-7 text-muted-foreground/30" />
@@ -208,11 +249,11 @@ export default function SavedItemsPage() {
       ) : (
         <>
           <p className="text-xs text-muted-foreground">
-            {items.length} saved item{items.length !== 1 ? 's' : ''}
-            {pagination?.hasMore ? '+' : ''}
+            {allItems.length} saved item{allItems.length !== 1 ? 's' : ''}
+            {hasMore ? '+' : ''}
           </p>
           <div className="space-y-3">
-            {items.map((item) => (
+            {allItems.map((item) => (
               <SavedItemCard
                 key={item.id}
                 item={item}
@@ -221,13 +262,21 @@ export default function SavedItemsPage() {
               />
             ))}
           </div>
-          {pagination?.hasMore && pagination.nextCursor && (
+          {hasMore && nextCursor && (
             <div className="flex justify-center pt-2">
               <Button
                 variant="outline"
-                onClick={() => setCursor(pagination.nextCursor!)}
+                onClick={handleLoadMore}
+                disabled={isLoading}
               >
-                Load More
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  'Load More'
+                )}
               </Button>
             </div>
           )}

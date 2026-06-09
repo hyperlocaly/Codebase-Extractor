@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type {
   GetBusiness200,
   GetBusinessHours200,
@@ -17,6 +18,7 @@ import {
   useAuthMe,
   ListReviewsSort,
   getListReviewsQueryKey,
+  getGetReviewSummaryQueryKey,
 } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoursTable } from './HoursTable';
@@ -163,6 +165,7 @@ function ReviewsSection({
   businessId: string;
   reviewSummary: NonNullable<GetReviewSummary200['data']> | undefined;
 }) {
+  const queryClient = useQueryClient();
   const [sort, setSort] = useState<SortOption>('newest');
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
@@ -286,6 +289,13 @@ function ReviewsSection({
           setCursor(undefined);
           setAllReviews([]);
           refetch();
+          // Invalidate review summary so rating count + average update immediately
+          queryClient.invalidateQueries({
+            queryKey: getGetReviewSummaryQueryKey({
+              businessId,
+              marketplace: MARKETPLACE_SLUG,
+            }),
+          });
         }}
         hasExistingReview={hasExistingReview}
       />
