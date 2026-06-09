@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   useListReviews,
   useGetReviewSummary,
@@ -11,7 +11,7 @@ import {
 } from '@workspace/api-client-react';
 import { useDashboard } from '@/providers/DashboardProvider';
 import type { ReviewSummary as ReviewSummaryType, ReviewResponse } from '@workspace/api-client-react';
-import { Star, MessageSquare, RefreshCw, AlertCircle, Send, Pencil, Trash2, ChevronDown } from 'lucide-react';
+import { Star, MessageSquare, RefreshCw, AlertCircle, Send, Pencil, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -33,6 +33,8 @@ import {
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 import { Stars } from '@/components/business-profile/ReviewSummary';
 
+const PAGE_LIMIT = 20;
+
 type ReviewWithResponse = ReviewSummaryType & { ownerResponse?: ReviewResponse | null };
 
 function timeAgo(date: Date | string | undefined): string {
@@ -42,7 +44,8 @@ function timeAgo(date: Date | string | undefined): string {
   const days = Math.floor(diff / 86_400_000);
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
-  if (days < 30) return `${Math.floor(days / 7) || 1} week${Math.floor(days / 7) !== 1 ? 's' : ''} ago`;
+  if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+  if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) !== 1 ? 's' : ''} ago`;
   if (days < 365) return `${Math.floor(days / 30)} month${Math.floor(days / 30) !== 1 ? 's' : ''} ago`;
   return `${Math.floor(days / 365)} year${Math.floor(days / 365) !== 1 ? 's' : ''} ago`;
 }
@@ -278,23 +281,49 @@ const SORT_LABELS: Record<string, string> = {
 };
 
 export default function ReviewsPage() {
-  const [sort, setSort] = useState<ListReviewsSort>(ListReviewsSort.newest);
-  const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
-
   const { businessId } = useDashboard();
+
+  const [sort, setSortState] = useState<ListReviewsSort>(ListReviewsSort.newest);
+  const [ratingFilter, setRatingFilterState] = useState<number | undefined>(undefined);
+
+  const isFirstPageRef = useRef(true);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [allReviews, setAllReviews] = useState<ReviewWithResponse[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
+  function setSort(s: ListReviewsSort) {
+    isFirstPageRef.current = true;
+    setSortState(s);
+    setCursor(undefined);
+    setAllReviews([]);
+    setHasMore(false);
+    setNextCursor(null);
+  }
+
+  function setRatingFilter(r: number | undefined) {
+    isFirstPageRef.current = true;
+    setRatingFilterState(r);
+    setCursor(undefined);
+    setAllReviews([]);
+    setHasMore(false);
+    setNextCursor(null);
+  }
 
   const listReviewsParams = {
     businessId: businessId ?? '',
     marketplace: MARKETPLACE_SLUG,
-    limit: 50,
+    limit: PAGE_LIMIT,
     sort,
     rating: ratingFilter,
+    ...(cursor ? { cursor } : {}),
   };
   const summaryParams = { businessId: businessId ?? '', marketplace: MARKETPLACE_SLUG };
 
   const {
     data: reviewsData,
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useListReviews(listReviewsParams, {
@@ -305,8 +334,34 @@ export default function ReviewsPage() {
     query: { enabled: !!businessId, queryKey: getGetReviewSummaryQueryKey(summaryParams) },
   });
 
-  const reviews = (reviewsData?.data ?? []) as ReviewWithResponse[];
+  useEffect(() => {
+    if (!reviewsData) return;
+    const page = (reviewsData?.data ?? []) as ReviewWithResponse[];
+    const pagination = (reviewsData as any)?.pagination as
+      | { hasMore: boolean; nextCursor: string | null }
+      | undefined;
+
+    if (isFirstPageRef.current) {
+      setAllReviews(page);
+    } else {
+      setAllReviews((prev) => {
+        const existingIds = new Set(prev.map((r) => r.id));
+        return [...prev, ...page.filter((r) => !existingIds.has(r.id))];
+      });
+    }
+    setHasMore(pagination?.hasMore ?? false);
+    setNextCursor(pagination?.nextCursor ?? null);
+  }, [reviewsData]);
+
+  function handleLoadMore() {
+    if (nextCursor) {
+      isFirstPageRef.current = false;
+      setCursor(nextCursor);
+    }
+  }
+
   const summary = summaryData?.data;
+  const showLoading = isLoading && allReviews.length === 0;
 
   if (!businessId) {
     return (
@@ -373,7 +428,7 @@ export default function ReviewsPage() {
           </div>
         </div>
 
-        {isError ? (
+        {isError && allReviews.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed py-10 text-center">
             <AlertCircle className="h-7 w-7 text-destructive/50" />
             <p className="text-sm text-muted-foreground">Failed to load reviews.</p>
@@ -382,13 +437,13 @@ export default function ReviewsPage() {
               Try again
             </Button>
           </div>
-        ) : isLoading ? (
+        ) : showLoading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-24 animate-pulse rounded-xl border bg-muted" />
             ))}
           </div>
-        ) : reviews.length === 0 ? (
+        ) : allReviews.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed py-12 text-center">
             <MessageSquare className="h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm font-medium text-muted-foreground">No reviews yet.</p>
@@ -397,11 +452,33 @@ export default function ReviewsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {reviews.map((r) => (
-              <ReviewRow key={r.id} review={r} onRefetch={() => refetch()} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {allReviews.map((r) => (
+                <ReviewRow key={r.id} review={r} onRefetch={() => refetch()} />
+              ))}
+            </div>
+
+            {hasMore && nextCursor && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={isFetching}
+                >
+                  {isFetching ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Loading…
+                    </>
+                  ) : (
+                    'Load more'
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

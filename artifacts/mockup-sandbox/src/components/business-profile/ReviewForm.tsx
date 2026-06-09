@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 
 interface ReviewFormProps {
@@ -109,6 +110,7 @@ export function ReviewForm({ businessId, onSuccess, hasExistingReview }: ReviewF
           setTitle('');
           setBody('');
           setIsAnonymous(false);
+          toast.success('Review submitted successfully!');
           onSuccess?.();
         },
         onError: (err: any) => {

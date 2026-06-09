@@ -132,3 +132,15 @@ Note the double "Get": `getGetReviewSummaryQueryKey` (Orval names it from `getRe
 ## pg_trgm required for search
 
 `CREATE EXTENSION IF NOT EXISTS pg_trgm;` must be run in the DB or all search requests return 500. This is a one-time setup step — not managed by Drizzle migrations.
+
+---
+
+## Sprint 9 final audit — defects fixed
+
+Three defects found and closed during final audit:
+
+1. **NotificationsPage `actionUrl`** — internal paths (starting with `/`) now use React Router `<Link>` to preserve SPA routing; external `http` URLs keep `<a target="_blank">` + ExternalLink icon.
+2. **ReviewForm success toast** — `toast.success('Review submitted successfully!')` added in `onSuccess` callback; user now gets explicit feedback.
+3. **Dashboard ReviewsPage pagination** — Replaced hardcoded `limit: 50` (no pagination) with cursor-based "Load More" pattern (limit 20). Uses same `isFirstPageRef` + `allReviews` accumulation. Sort/ratingFilter setters wrapped to reset cursor+accumulation. Also fixed `timeAgo` for 2–6 day range (was "1 week ago", now "N days ago").
+
+Sprint 9 typecheck + build: clean.

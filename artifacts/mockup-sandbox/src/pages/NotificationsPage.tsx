@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useListNotifications,
@@ -122,15 +123,24 @@ function NotifCard({
         )}
 
         {notif.actionUrl && (
-          <a
-            href={notif.actionUrl}
-            target={notif.actionUrl.startsWith('http') ? '_blank' : undefined}
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            View details
-            <ExternalLink className="h-3 w-3" />
-          </a>
+          notif.actionUrl.startsWith('http') ? (
+            <a
+              href={notif.actionUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              View details
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : (
+            <Link
+              to={notif.actionUrl}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              View details
+            </Link>
+          )
         )}
       </div>
 
