@@ -1,0 +1,313 @@
+SPRINT 9 — REVIEWS, RATINGS & REPUTATION SYSTEM
+
+MANDATORY PROCESS
+
+Before writing any code:
+
+1. Perform a complete audit.
+2. Verify backend routes, DB tables, OpenAPI schemas, generated hooks, dashboard pages, public profile pages, moderation support, and ownership rules.
+3. Produce an Audit Report listing:
+
+   * Fully Implemented
+   * Partially Implemented
+   * Missing
+   * Defects
+4. Do NOT write code until audit is complete.
+
+SUCCESS CRITERIA
+
+This sprint is not complete when code compiles.
+
+It is complete only when a subsequent audit cannot find missing, partial, or defective requirements.
+
+GOAL
+
+Build a complete review, rating, and reputation system for marketplace businesses.
+
+PUBLIC USERS MUST BE ABLE TO:
+
+* View business ratings
+* View review count
+* Read reviews
+* Sort reviews
+* Filter reviews
+* View owner responses
+
+AUTHENTICATED USERS MUST BE ABLE TO:
+
+* Submit reviews
+* Submit star ratings
+* Edit their own reviews
+* Delete their own reviews
+* Report abusive reviews
+
+BUSINESS OWNERS MUST BE ABLE TO:
+
+* View all reviews
+* Respond to reviews
+* Delete only their own responses
+* View rating analytics
+
+ADMINS MUST BE ABLE TO:
+
+* Moderate reviews
+* Hide abusive reviews
+* Restore moderated reviews
+* Review reported content
+
+PHASE 1 — AUDIT
+
+Verify:
+
+Backend:
+
+* review routes
+* moderation routes
+* response routes
+* ownership checks
+
+Database:
+
+* reviews tables
+* ratings storage
+* moderation fields
+* report fields
+
+OpenAPI:
+
+* review schemas
+* response schemas
+* moderation schemas
+
+Generated Hooks:
+
+* review hooks
+* moderation hooks
+
+Frontend:
+
+* profile review tabs
+* review cards
+* review forms
+* moderation pages
+
+Deliver audit before implementation.
+
+PHASE 2 — DATABASE & BACKEND
+
+Review Entity
+
+Fields:
+
+* id
+* businessId
+* userId
+* rating (1–5)
+* title
+* comment
+* status
+* moderationStatus
+* createdAt
+* updatedAt
+
+Review Response Entity
+
+Fields:
+
+* id
+* reviewId
+* businessId
+* userId
+* response
+* createdAt
+* updatedAt
+
+Review Report Entity
+
+Fields:
+
+* id
+* reviewId
+* reporterId
+* reason
+* status
+* createdAt
+
+Required Endpoints
+
+Reviews:
+
+* GET reviews
+* POST review
+* PATCH own review
+* DELETE own review
+
+Responses:
+
+* POST response
+* PATCH response
+* DELETE response
+
+Reports:
+
+* POST report review
+* GET reports (admin)
+
+Moderation:
+
+* hide review
+* restore review
+* reject report
+
+Ownership Rules
+
+Review author:
+
+* edit own review
+* delete own review
+
+Business owner:
+
+* respond to reviews
+* edit own response
+* delete own response
+
+Admin:
+
+* moderate all reviews
+
+Marketplace isolation required.
+
+PHASE 3 — PUBLIC PROFILE
+
+Business Profile Reviews Tab
+
+Requirements:
+
+* average rating
+* rating breakdown (1–5 stars)
+* review count
+* review cards
+* owner responses
+* loading state
+* empty state
+* error state
+* retry button
+
+Review Card
+
+Show:
+
+* rating stars
+* reviewer initials
+* title
+* comment
+* created date
+* owner response
+
+Review Form
+
+Authenticated users only:
+
+* rating
+* title
+* comment
+
+Anonymous users:
+
+* login CTA
+
+PHASE 4 — OWNER DASHBOARD
+
+Create:
+
+/dashboard/reviews
+
+Capabilities:
+
+* list reviews
+* filter reviews
+* sort reviews
+* view rating trends
+* respond to review
+* edit response
+* delete response
+
+Analytics:
+
+* average rating
+* review count
+* recent reviews
+* rating distribution
+
+PHASE 5 — ADMIN MODERATION
+
+Create:
+
+/admin/reviews
+
+Capabilities:
+
+* reported reviews
+* moderation queue
+* hide review
+* restore review
+* resolve report
+
+Requirements:
+
+* moderation notes
+* status badges
+* audit trail where supported
+
+PHASE 6 — REPUTATION INTEGRATION
+
+Business cards:
+
+Display:
+
+* average rating
+* review count
+
+Directory:
+
+* rating badge
+* review count
+
+Search:
+
+* include rating metadata where available
+
+Profile header:
+
+* rating summary
+
+PHASE 7 — VERIFICATION
+
+Required:
+
+* regenerate codegen
+* run all typechecks
+* run build
+* verify routes
+* verify ownership enforcement
+* verify moderation workflow
+* verify dashboard workflow
+* verify public profile workflow
+
+DELIVERABLE FORMAT
+
+Provide:
+
+1. Audit Report
+2. Files Created
+3. Files Modified
+4. Backend Changes
+5. Frontend Changes
+6. Verification Results
+7. Remaining Blockers
+8. Sprint Completion %
+
+Do not skip the audit.
+Do not invent functionality.
+Fix discovered defects before adding new functionality.

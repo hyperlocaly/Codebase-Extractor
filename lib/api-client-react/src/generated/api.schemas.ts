@@ -453,10 +453,30 @@ export interface ServiceInput {
   sortOrder?: number;
 }
 
+export interface ReviewResponse {
+  id: string;
+  reviewId: string;
+  businessId: string;
+  userId: string;
+  response: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewReport {
+  id: string;
+  reviewId: string;
+  reporterId: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface ReviewSummary {
   id: string;
   businessId: string;
   reviewerId?: string;
+  reviewerName?: string | null;
   /**
      * @minimum 1
      * @maximum 5
@@ -468,6 +488,62 @@ export interface ReviewSummary {
   status: string;
   moderationStatus?: string;
   createdAt?: string;
+  ownerResponse?: ReviewResponse | null;
+}
+
+export type AdminReviewItemReviewer = {
+  displayName?: string;
+} | null;
+
+export type AdminReviewItemBusiness = {
+  name?: string;
+} | null;
+
+export interface AdminReviewItem {
+  id: string;
+  businessId: string;
+  reviewerId?: string | null;
+  reviewerName?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  title?: string | null;
+  body?: string | null;
+  isAnonymous?: boolean;
+  status: string;
+  moderationStatus: string;
+  moderationNote?: string | null;
+  pendingReports?: number;
+  createdAt: string;
+  ownerResponse?: ReviewResponse | null;
+  reviewer?: AdminReviewItemReviewer;
+  business?: AdminReviewItemBusiness;
+}
+
+export type AdminReportItemReporter = {
+  displayName?: string;
+} | null;
+
+export type AdminReportItemBusiness = {
+  name?: string;
+} | null;
+
+export type AdminReportItemReview = {
+  rating?: number;
+  body?: string | null;
+} | null;
+
+export interface AdminReportItem {
+  id: string;
+  reviewId: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  reporter?: AdminReportItemReporter;
+  business?: AdminReportItemBusiness;
+  review?: AdminReportItemReview;
 }
 
 export interface CreateReviewRequest {
@@ -1035,7 +1111,23 @@ businessId: string;
 marketplace: string;
 limit?: number;
 cursor?: string;
+sort?: ListReviewsSort;
+/**
+ * @minimum 1
+ * @maximum 5
+ */
+rating?: number;
 };
+
+export type ListReviewsSort = typeof ListReviewsSort[keyof typeof ListReviewsSort];
+
+
+export const ListReviewsSort = {
+  newest: 'newest',
+  oldest: 'oldest',
+  highest: 'highest',
+  lowest: 'lowest',
+} as const;
 
 export type ListReviews200 = {
   data?: ReviewSummary[];
@@ -1055,10 +1147,17 @@ businessId: string;
 marketplace: string;
 };
 
+/**
+ * Count of reviews per star rating (1-5)
+ */
+export type GetReviewSummary200DataDistribution = {[key: string]: number};
+
 export type GetReviewSummary200Data = {
   businessId?: string;
   avgRating?: number | null;
   totalCount?: number;
+  /** Count of reviews per star rating (1-5) */
+  distribution?: GetReviewSummary200DataDistribution;
 };
 
 export type GetReviewSummary200 = {
@@ -1079,8 +1178,58 @@ export type UpdateReviewBody = {
   body?: string;
 };
 
+export type UpdateReview200 = {
+  data?: ReviewSummary;
+};
+
 export type DeleteReviewParams = {
 marketplace: string;
+};
+
+export type CreateReviewResponseParams = {
+marketplace: string;
+};
+
+export type CreateReviewResponseBody = {
+  /** @maxLength 2000 */
+  response: string;
+};
+
+export type CreateReviewResponse201 = {
+  data?: ReviewResponse;
+};
+
+export type UpdateReviewResponseParams = {
+marketplace: string;
+};
+
+export type UpdateReviewResponseBody = {
+  /** @maxLength 2000 */
+  response: string;
+};
+
+export type UpdateReviewResponse200 = {
+  data?: ReviewResponse;
+};
+
+export type DeleteReviewResponseParams = {
+marketplace: string;
+};
+
+export type ReportReviewParams = {
+marketplace: string;
+};
+
+export type ReportReviewBody = {
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+};
+
+export type ReportReview201 = {
+  data?: ReviewReport;
 };
 
 export type ListSavedItemsParams = {
@@ -1275,6 +1424,20 @@ export type AdminResolveClaimBody = {
   adminNote?: string;
 };
 
+export type AdminListReviewsParams = {
+marketplace: string;
+status?: string;
+moderationStatus?: string;
+q?: string;
+limit?: number;
+cursor?: string;
+};
+
+export type AdminListReviews200 = {
+  data: AdminReviewItem[];
+  nextCursor?: string | null;
+};
+
 export type AdminModerateReviewParams = {
 marketplace: string;
 };
@@ -1291,6 +1454,43 @@ export const AdminModerateReviewBodyModerationStatus = {
 export type AdminModerateReviewBody = {
   moderationStatus: AdminModerateReviewBodyModerationStatus;
   moderationNote?: string;
+};
+
+export type AdminListReportsParams = {
+marketplace: string;
+status?: AdminListReportsStatus;
+limit?: number;
+cursor?: string;
+};
+
+export type AdminListReportsStatus = typeof AdminListReportsStatus[keyof typeof AdminListReportsStatus];
+
+
+export const AdminListReportsStatus = {
+  pending: 'pending',
+  resolved: 'resolved',
+  rejected: 'rejected',
+} as const;
+
+export type AdminListReports200 = {
+  data: AdminReportItem[];
+  nextCursor?: string | null;
+};
+
+export type AdminResolveReportParams = {
+marketplace: string;
+};
+
+export type AdminResolveReportBodyStatus = typeof AdminResolveReportBodyStatus[keyof typeof AdminResolveReportBodyStatus];
+
+
+export const AdminResolveReportBodyStatus = {
+  resolved: 'resolved',
+  rejected: 'rejected',
+} as const;
+
+export type AdminResolveReportBody = {
+  status: AdminResolveReportBodyStatus;
 };
 
 export type AdminAnalyticsSummaryParams = {

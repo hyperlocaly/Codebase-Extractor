@@ -1294,12 +1294,18 @@ export const DeletePortfolioItemQueryParams = zod.object({
  * @summary List published reviews for a business
  */
 export const listReviewsQueryLimitDefault = 20;
+export const listReviewsQuerySortDefault = `newest`;
+export const listReviewsQueryRatingMax = 5;
+
+
 
 export const ListReviewsQueryParams = zod.object({
   "businessId": zod.coerce.string().uuid(),
   "marketplace": zod.coerce.string(),
   "limit": zod.coerce.number().default(listReviewsQueryLimitDefault),
-  "cursor": zod.coerce.string().optional()
+  "cursor": zod.coerce.string().optional(),
+  "sort": zod.enum(['newest', 'oldest', 'highest', 'lowest']).default(listReviewsQuerySortDefault),
+  "rating": zod.coerce.number().min(1).max(listReviewsQueryRatingMax).optional()
 })
 
 export const listReviewsResponseDataItemRatingMax = 5;
@@ -1311,13 +1317,23 @@ export const ListReviewsResponse = zod.object({
   "id": zod.string().uuid(),
   "businessId": zod.string().uuid(),
   "reviewerId": zod.string().uuid().optional(),
+  "reviewerName": zod.string().nullish(),
   "rating": zod.number().min(1).max(listReviewsResponseDataItemRatingMax),
   "title": zod.string().nullish(),
   "body": zod.string().nullish(),
   "isAnonymous": zod.boolean().optional(),
   "status": zod.string(),
   "moderationStatus": zod.string().optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "ownerResponse": zod.object({
+  "id": zod.string().uuid(),
+  "reviewId": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "response": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).nullish()
 })).optional(),
   "pagination": zod.object({
   "nextCursor": zod.string().nullable(),
@@ -1359,7 +1375,8 @@ export const GetReviewSummaryResponse = zod.object({
   "data": zod.object({
   "businessId": zod.string().optional(),
   "avgRating": zod.number().nullish(),
-  "totalCount": zod.number().optional()
+  "totalCount": zod.number().optional(),
+  "distribution": zod.record(zod.string(), zod.number()).optional().describe('Count of reviews per star rating (1-5)')
 }).optional()
 })
 
@@ -1385,6 +1402,35 @@ export const UpdateReviewBody = zod.object({
   "body": zod.string().optional()
 })
 
+export const updateReviewResponseDataRatingMax = 5;
+
+
+
+export const UpdateReviewResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "reviewerId": zod.string().uuid().optional(),
+  "reviewerName": zod.string().nullish(),
+  "rating": zod.number().min(1).max(updateReviewResponseDataRatingMax),
+  "title": zod.string().nullish(),
+  "body": zod.string().nullish(),
+  "isAnonymous": zod.boolean().optional(),
+  "status": zod.string(),
+  "moderationStatus": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "ownerResponse": zod.object({
+  "id": zod.string().uuid(),
+  "reviewId": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "response": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).nullish()
+}).optional()
+})
+
 
 /**
  * @summary Delete your own review
@@ -1395,6 +1441,93 @@ export const DeleteReviewParams = zod.object({
 
 export const DeleteReviewQueryParams = zod.object({
   "marketplace": zod.coerce.string()
+})
+
+
+/**
+ * @summary Business owner posts a response to a review
+ */
+export const CreateReviewResponseParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const CreateReviewResponseQueryParams = zod.object({
+  "marketplace": zod.coerce.string()
+})
+
+export const createReviewResponseBodyResponseMax = 2000;
+
+
+
+export const CreateReviewResponseBody = zod.object({
+  "response": zod.string().max(createReviewResponseBodyResponseMax)
+})
+
+
+/**
+ * @summary Business owner edits their response
+ */
+export const UpdateReviewResponseParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "responseId": zod.coerce.string().uuid()
+})
+
+export const UpdateReviewResponseQueryParams = zod.object({
+  "marketplace": zod.coerce.string()
+})
+
+export const updateReviewResponseBodyResponseMax = 2000;
+
+
+
+export const UpdateReviewResponseBody = zod.object({
+  "response": zod.string().max(updateReviewResponseBodyResponseMax)
+})
+
+export const UpdateReviewResponseResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string().uuid(),
+  "reviewId": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "response": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).optional()
+})
+
+
+/**
+ * @summary Business owner deletes their response
+ */
+export const DeleteReviewResponseParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "responseId": zod.coerce.string().uuid()
+})
+
+export const DeleteReviewResponseQueryParams = zod.object({
+  "marketplace": zod.coerce.string()
+})
+
+
+/**
+ * @summary Report an abusive review
+ */
+export const ReportReviewParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ReportReviewQueryParams = zod.object({
+  "marketplace": zod.coerce.string()
+})
+
+export const reportReviewBodyReasonMin = 5;
+export const reportReviewBodyReasonMax = 500;
+
+
+
+export const ReportReviewBody = zod.object({
+  "reason": zod.string().min(reportReviewBodyReasonMin).max(reportReviewBodyReasonMax)
 })
 
 
@@ -1755,7 +1888,60 @@ export const AdminResolveClaimBody = zod.object({
 
 
 /**
- * @summary Moderate a review (flag or remove)
+ * @summary List all reviews for moderation
+ */
+export const adminListReviewsQueryLimitDefault = 20;
+
+export const AdminListReviewsQueryParams = zod.object({
+  "marketplace": zod.coerce.string(),
+  "status": zod.coerce.string().optional(),
+  "moderationStatus": zod.coerce.string().optional(),
+  "q": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(adminListReviewsQueryLimitDefault),
+  "cursor": zod.coerce.string().optional()
+})
+
+export const adminListReviewsResponseDataItemRatingMax = 5;
+
+
+
+export const AdminListReviewsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "reviewerId": zod.string().uuid().nullish(),
+  "reviewerName": zod.string().nullish(),
+  "rating": zod.number().min(1).max(adminListReviewsResponseDataItemRatingMax),
+  "title": zod.string().nullish(),
+  "body": zod.string().nullish(),
+  "isAnonymous": zod.boolean().optional(),
+  "status": zod.string(),
+  "moderationStatus": zod.string(),
+  "moderationNote": zod.string().nullish(),
+  "pendingReports": zod.number().optional(),
+  "createdAt": zod.coerce.date(),
+  "ownerResponse": zod.object({
+  "id": zod.string().uuid(),
+  "reviewId": zod.string().uuid(),
+  "businessId": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "response": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).nullish(),
+  "reviewer": zod.object({
+  "displayName": zod.string().optional()
+}).nullish(),
+  "business": zod.object({
+  "name": zod.string().optional()
+}).nullish()
+})),
+  "nextCursor": zod.string().nullish()
+})
+
+
+/**
+ * @summary Moderate a review (flag, remove, or restore)
  */
 export const AdminModerateReviewParams = zod.object({
   "id": zod.coerce.string().uuid()
@@ -1768,6 +1954,56 @@ export const AdminModerateReviewQueryParams = zod.object({
 export const AdminModerateReviewBody = zod.object({
   "moderationStatus": zod.enum(['auto_approved', 'flagged', 'removed']),
   "moderationNote": zod.string().optional()
+})
+
+
+/**
+ * @summary List reported reviews
+ */
+export const adminListReportsQueryLimitDefault = 20;
+
+export const AdminListReportsQueryParams = zod.object({
+  "marketplace": zod.coerce.string(),
+  "status": zod.enum(['pending', 'resolved', 'rejected']).optional(),
+  "limit": zod.coerce.number().default(adminListReportsQueryLimitDefault),
+  "cursor": zod.coerce.string().optional()
+})
+
+export const AdminListReportsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "reviewId": zod.string().uuid(),
+  "reason": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reporter": zod.object({
+  "displayName": zod.string().optional()
+}).nullish(),
+  "business": zod.object({
+  "name": zod.string().optional()
+}).nullish(),
+  "review": zod.object({
+  "rating": zod.number().optional(),
+  "body": zod.string().nullish()
+}).nullish()
+})),
+  "nextCursor": zod.string().nullish()
+})
+
+
+/**
+ * @summary Resolve or reject a review report
+ */
+export const AdminResolveReportParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const AdminResolveReportQueryParams = zod.object({
+  "marketplace": zod.coerce.string()
+})
+
+export const AdminResolveReportBody = zod.object({
+  "status": zod.enum(['resolved', 'rejected'])
 })
 
 

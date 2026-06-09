@@ -7,7 +7,6 @@ import {
   useListProducts,
   useListServices,
   useListPortfolios,
-  useListReviews,
   useGetReviewSummary,
   useListBusinessUpdates,
   useTrackEngagementEvent,
@@ -151,12 +150,6 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
     { marketplace: MARKETPLACE_SLUG },
   );
 
-  const { data: reviewsData, isLoading: reviewsLoading } = useListReviews({
-    businessId: business.id,
-    marketplace: MARKETPLACE_SLUG,
-    limit: 10,
-  });
-
   const { data: reviewSummaryData } = useGetReviewSummary({
     businessId: business.id,
     marketplace: MARKETPLACE_SLUG,
@@ -172,7 +165,6 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
   const products = (productsData as ListProducts200 | undefined)?.data ?? [];
   const services = (servicesData as ListServices200 | undefined)?.data ?? [];
   const portfolios = portfoliosData?.data ?? [];
-  const reviews = reviewsData?.data ?? [];
   const reviewSummary = (reviewSummaryData as GetReviewSummary200 | undefined)?.data;
   const updates = (updatesData as ListBusinessUpdates200 | undefined)?.data ?? [];
 
@@ -197,8 +189,6 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
         portfoliosLoading={portfoliosLoading}
         portfoliosError={portfoliosError}
         onRetryPortfolios={refetchPortfolios}
-        reviews={reviews}
-        reviewsLoading={reviewsLoading}
         reviewSummary={reviewSummary}
         updates={updates}
         updatesLoading={updatesLoading}

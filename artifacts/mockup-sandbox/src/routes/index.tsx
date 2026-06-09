@@ -26,6 +26,8 @@ const ContactsPage = lazy(() => import('@/pages/dashboard/ContactsPage'));
 const ProductsPage = lazy(() => import('@/pages/dashboard/ProductsPage'));
 const ServicesPage = lazy(() => import('@/pages/dashboard/ServicesPage'));
 const PortfolioPage = lazy(() => import('@/pages/dashboard/PortfolioPage'));
+const ReviewsPage = lazy(() => import('@/pages/dashboard/ReviewsPage'));
+const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage'));
 
 function PageLoader() {
   return (
@@ -156,6 +158,10 @@ export const router = createBrowserRouter(
               element: withSuspense(PortfolioPage),
             },
             {
+              path: '/dashboard/reviews',
+              element: withSuspense(ReviewsPage),
+            },
+            {
               path: '/dashboard/updates',
               element: (
                 <div className="flex min-h-[60vh] items-center justify-center">
@@ -241,13 +247,7 @@ export const router = createBrowserRouter(
             },
             {
               path: '/admin/reviews',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Review moderation — coming in Sprint 10
-                  </p>
-                </div>
-              ),
+              element: withSuspense(AdminReviewsPage),
             },
             {
               path: '/admin/analytics',

@@ -29,10 +29,16 @@ import type {
   AdminAnalyticsSummaryParams,
   AdminListBusinessesParams,
   AdminListClaimRequestsParams,
+  AdminListReports200,
+  AdminListReportsParams,
+  AdminListReviews200,
+  AdminListReviewsParams,
   AdminModerateReviewBody,
   AdminModerateReviewParams,
   AdminResolveClaimBody,
   AdminResolveClaimParams,
+  AdminResolveReportBody,
+  AdminResolveReportParams,
   AdminUpdateBusinessStatusBody,
   AdminUpdateBusinessStatusParams,
   AttachBusinessMediaBody,
@@ -62,6 +68,9 @@ import type {
   CreateReview201,
   CreateReviewParams,
   CreateReviewRequest,
+  CreateReviewResponse201,
+  CreateReviewResponseBody,
+  CreateReviewResponseParams,
   CreateService201,
   CreateServiceParams,
   DeleteBusinessBranchParams,
@@ -74,6 +83,7 @@ import type {
   DeletePortfolioParams,
   DeleteProductParams,
   DeleteReviewParams,
+  DeleteReviewResponseParams,
   DeleteServiceParams,
   ForbiddenErrorResponse,
   GetBusiness200,
@@ -138,6 +148,9 @@ import type {
   Readyz200,
   RegisterRequest,
   RemoveSavedItemParams,
+  ReportReview201,
+  ReportReviewBody,
+  ReportReviewParams,
   SaveItemBody,
   SaveItemParams,
   SearchBusinesses200,
@@ -178,8 +191,12 @@ import type {
   UpdatePortfolioParams,
   UpdateProduct200,
   UpdateProductParams,
+  UpdateReview200,
   UpdateReviewBody,
   UpdateReviewParams,
+  UpdateReviewResponse200,
+  UpdateReviewResponseBody,
+  UpdateReviewResponseParams,
   UpdateService200,
   UpdateServiceParams,
   UpsertBusinessHours200,
@@ -4417,9 +4434,9 @@ export const getUpdateReviewUrl = (id: string,
  */
 export const updateReview = async (id: string,
     updateReviewBody: UpdateReviewBody,
-    params: UpdateReviewParams, options?: RequestInit): Promise<void> => {
+    params: UpdateReviewParams, options?: RequestInit): Promise<UpdateReview200> => {
 
-  return customFetch<void>(getUpdateReviewUrl(id,params),
+  return customFetch<UpdateReview200>(getUpdateReviewUrl(id,params),
   {
     ...options,
     method: 'PATCH',
@@ -4554,6 +4571,332 @@ export const useDeleteReview = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteReviewMutationOptions(options));
+    }
+
+export const getCreateReviewResponseUrl = (id: string,
+    params: CreateReviewResponseParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reviews/${id}/responses?${stringifiedParams}` : `/api/v1/reviews/${id}/responses`
+}
+
+/**
+ * @summary Business owner posts a response to a review
+ */
+export const createReviewResponse = async (id: string,
+    createReviewResponseBody: CreateReviewResponseBody,
+    params: CreateReviewResponseParams, options?: RequestInit): Promise<CreateReviewResponse201> => {
+
+  return customFetch<CreateReviewResponse201>(getCreateReviewResponseUrl(id,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createReviewResponseBody,)
+  }
+);}
+
+
+
+
+export const getCreateReviewResponseMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse | ConflictErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReviewResponse>>, TError,{id: string;data: BodyType<CreateReviewResponseBody>;params: CreateReviewResponseParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createReviewResponse>>, TError,{id: string;data: BodyType<CreateReviewResponseBody>;params: CreateReviewResponseParams}, TContext> => {
+
+const mutationKey = ['createReviewResponse'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReviewResponse>>, {id: string;data: BodyType<CreateReviewResponseBody>;params: CreateReviewResponseParams}> = (props) => {
+          const {id,data,params} = props ?? {};
+
+          return  createReviewResponse(id,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReviewResponseMutationResult = NonNullable<Awaited<ReturnType<typeof createReviewResponse>>>
+    export type CreateReviewResponseMutationBody = BodyType<CreateReviewResponseBody>
+    export type CreateReviewResponseMutationError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse | ConflictErrorResponse>
+
+    /**
+ * @summary Business owner posts a response to a review
+ */
+export const useCreateReviewResponse = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse | ConflictErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReviewResponse>>, TError,{id: string;data: BodyType<CreateReviewResponseBody>;params: CreateReviewResponseParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createReviewResponse>>,
+        TError,
+        {id: string;data: BodyType<CreateReviewResponseBody>;params: CreateReviewResponseParams},
+        TContext
+      > => {
+      return useMutation(getCreateReviewResponseMutationOptions(options));
+    }
+
+export const getUpdateReviewResponseUrl = (id: string,
+    responseId: string,
+    params: UpdateReviewResponseParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reviews/${id}/responses/${responseId}?${stringifiedParams}` : `/api/v1/reviews/${id}/responses/${responseId}`
+}
+
+/**
+ * @summary Business owner edits their response
+ */
+export const updateReviewResponse = async (id: string,
+    responseId: string,
+    updateReviewResponseBody: UpdateReviewResponseBody,
+    params: UpdateReviewResponseParams, options?: RequestInit): Promise<UpdateReviewResponse200> => {
+
+  return customFetch<UpdateReviewResponse200>(getUpdateReviewResponseUrl(id,responseId,params),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateReviewResponseBody,)
+  }
+);}
+
+
+
+
+export const getUpdateReviewResponseMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReviewResponse>>, TError,{id: string;responseId: string;data: BodyType<UpdateReviewResponseBody>;params: UpdateReviewResponseParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateReviewResponse>>, TError,{id: string;responseId: string;data: BodyType<UpdateReviewResponseBody>;params: UpdateReviewResponseParams}, TContext> => {
+
+const mutationKey = ['updateReviewResponse'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReviewResponse>>, {id: string;responseId: string;data: BodyType<UpdateReviewResponseBody>;params: UpdateReviewResponseParams}> = (props) => {
+          const {id,responseId,data,params} = props ?? {};
+
+          return  updateReviewResponse(id,responseId,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReviewResponseMutationResult = NonNullable<Awaited<ReturnType<typeof updateReviewResponse>>>
+    export type UpdateReviewResponseMutationBody = BodyType<UpdateReviewResponseBody>
+    export type UpdateReviewResponseMutationError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>
+
+    /**
+ * @summary Business owner edits their response
+ */
+export const useUpdateReviewResponse = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReviewResponse>>, TError,{id: string;responseId: string;data: BodyType<UpdateReviewResponseBody>;params: UpdateReviewResponseParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateReviewResponse>>,
+        TError,
+        {id: string;responseId: string;data: BodyType<UpdateReviewResponseBody>;params: UpdateReviewResponseParams},
+        TContext
+      > => {
+      return useMutation(getUpdateReviewResponseMutationOptions(options));
+    }
+
+export const getDeleteReviewResponseUrl = (id: string,
+    responseId: string,
+    params: DeleteReviewResponseParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reviews/${id}/responses/${responseId}?${stringifiedParams}` : `/api/v1/reviews/${id}/responses/${responseId}`
+}
+
+/**
+ * @summary Business owner deletes their response
+ */
+export const deleteReviewResponse = async (id: string,
+    responseId: string,
+    params: DeleteReviewResponseParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteReviewResponseUrl(id,responseId,params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteReviewResponseMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReviewResponse>>, TError,{id: string;responseId: string;params: DeleteReviewResponseParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteReviewResponse>>, TError,{id: string;responseId: string;params: DeleteReviewResponseParams}, TContext> => {
+
+const mutationKey = ['deleteReviewResponse'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteReviewResponse>>, {id: string;responseId: string;params: DeleteReviewResponseParams}> = (props) => {
+          const {id,responseId,params} = props ?? {};
+
+          return  deleteReviewResponse(id,responseId,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteReviewResponseMutationResult = NonNullable<Awaited<ReturnType<typeof deleteReviewResponse>>>
+
+    export type DeleteReviewResponseMutationError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>
+
+    /**
+ * @summary Business owner deletes their response
+ */
+export const useDeleteReviewResponse = <TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReviewResponse>>, TError,{id: string;responseId: string;params: DeleteReviewResponseParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteReviewResponse>>,
+        TError,
+        {id: string;responseId: string;params: DeleteReviewResponseParams},
+        TContext
+      > => {
+      return useMutation(getDeleteReviewResponseMutationOptions(options));
+    }
+
+export const getReportReviewUrl = (id: string,
+    params: ReportReviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reviews/${id}/report?${stringifiedParams}` : `/api/v1/reviews/${id}/report`
+}
+
+/**
+ * @summary Report an abusive review
+ */
+export const reportReview = async (id: string,
+    reportReviewBody: ReportReviewBody,
+    params: ReportReviewParams, options?: RequestInit): Promise<ReportReview201> => {
+
+  return customFetch<ReportReview201>(getReportReviewUrl(id,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reportReviewBody,)
+  }
+);}
+
+
+
+
+export const getReportReviewMutationOptions = <TError = ErrorType<UnauthorizedErrorResponse | NotFoundErrorResponse | ConflictErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportReview>>, TError,{id: string;data: BodyType<ReportReviewBody>;params: ReportReviewParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportReview>>, TError,{id: string;data: BodyType<ReportReviewBody>;params: ReportReviewParams}, TContext> => {
+
+const mutationKey = ['reportReview'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportReview>>, {id: string;data: BodyType<ReportReviewBody>;params: ReportReviewParams}> = (props) => {
+          const {id,data,params} = props ?? {};
+
+          return  reportReview(id,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportReviewMutationResult = NonNullable<Awaited<ReturnType<typeof reportReview>>>
+    export type ReportReviewMutationBody = BodyType<ReportReviewBody>
+    export type ReportReviewMutationError = ErrorType<UnauthorizedErrorResponse | NotFoundErrorResponse | ConflictErrorResponse>
+
+    /**
+ * @summary Report an abusive review
+ */
+export const useReportReview = <TError = ErrorType<UnauthorizedErrorResponse | NotFoundErrorResponse | ConflictErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportReview>>, TError,{id: string;data: BodyType<ReportReviewBody>;params: ReportReviewParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportReview>>,
+        TError,
+        {id: string;data: BodyType<ReportReviewBody>;params: ReportReviewParams},
+        TContext
+      > => {
+      return useMutation(getReportReviewMutationOptions(options));
     }
 
 export const getListSavedItemsUrl = (params: ListSavedItemsParams,) => {
@@ -6345,6 +6688,90 @@ export const useAdminResolveClaim = <TError = ErrorType<unknown>,
       return useMutation(getAdminResolveClaimMutationOptions(options));
     }
 
+export const getAdminListReviewsUrl = (params: AdminListReviewsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/reviews?${stringifiedParams}` : `/api/v1/admin/reviews`
+}
+
+/**
+ * @summary List all reviews for moderation
+ */
+export const adminListReviews = async (params: AdminListReviewsParams, options?: RequestInit): Promise<AdminListReviews200> => {
+
+  return customFetch<AdminListReviews200>(getAdminListReviewsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListReviewsQueryKey = (params?: AdminListReviewsParams,) => {
+    return [
+    `/api/v1/admin/reviews`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminListReviewsQueryOptions = <TData = Awaited<ReturnType<typeof adminListReviews>>, TError = ErrorType<unknown>>(params: AdminListReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListReviewsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListReviews>>> = ({ signal }) => adminListReviews(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListReviews>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListReviewsQueryResult = NonNullable<Awaited<ReturnType<typeof adminListReviews>>>
+export type AdminListReviewsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all reviews for moderation
+ */
+
+export function useAdminListReviews<TData = Awaited<ReturnType<typeof adminListReviews>>, TError = ErrorType<unknown>>(
+ params: AdminListReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListReviewsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getAdminModerateReviewUrl = (id: string,
     params: AdminModerateReviewParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -6362,7 +6789,7 @@ export const getAdminModerateReviewUrl = (id: string,
 }
 
 /**
- * @summary Moderate a review (flag or remove)
+ * @summary Moderate a review (flag, remove, or restore)
  */
 export const adminModerateReview = async (id: string,
     adminModerateReviewBody: AdminModerateReviewBody,
@@ -6413,7 +6840,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AdminModerateReviewMutationError = ErrorType<unknown>
 
     /**
- * @summary Moderate a review (flag or remove)
+ * @summary Moderate a review (flag, remove, or restore)
  */
 export const useAdminModerateReview = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminModerateReview>>, TError,{id: string;data: BodyType<AdminModerateReviewBody>;params: AdminModerateReviewParams}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -6424,6 +6851,171 @@ export const useAdminModerateReview = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getAdminModerateReviewMutationOptions(options));
+    }
+
+export const getAdminListReportsUrl = (params: AdminListReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/reports?${stringifiedParams}` : `/api/v1/admin/reports`
+}
+
+/**
+ * @summary List reported reviews
+ */
+export const adminListReports = async (params: AdminListReportsParams, options?: RequestInit): Promise<AdminListReports200> => {
+
+  return customFetch<AdminListReports200>(getAdminListReportsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListReportsQueryKey = (params?: AdminListReportsParams,) => {
+    return [
+    `/api/v1/admin/reports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminListReportsQueryOptions = <TData = Awaited<ReturnType<typeof adminListReports>>, TError = ErrorType<unknown>>(params: AdminListReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListReportsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListReports>>> = ({ signal }) => adminListReports(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListReportsQueryResult = NonNullable<Awaited<ReturnType<typeof adminListReports>>>
+export type AdminListReportsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List reported reviews
+ */
+
+export function useAdminListReports<TData = Awaited<ReturnType<typeof adminListReports>>, TError = ErrorType<unknown>>(
+ params: AdminListReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListReportsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAdminResolveReportUrl = (id: string,
+    params: AdminResolveReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/reports/${id}?${stringifiedParams}` : `/api/v1/admin/reports/${id}`
+}
+
+/**
+ * @summary Resolve or reject a review report
+ */
+export const adminResolveReport = async (id: string,
+    adminResolveReportBody: AdminResolveReportBody,
+    params: AdminResolveReportParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getAdminResolveReportUrl(id,params),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adminResolveReportBody,)
+  }
+);}
+
+
+
+
+export const getAdminResolveReportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminResolveReport>>, TError,{id: string;data: BodyType<AdminResolveReportBody>;params: AdminResolveReportParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminResolveReport>>, TError,{id: string;data: BodyType<AdminResolveReportBody>;params: AdminResolveReportParams}, TContext> => {
+
+const mutationKey = ['adminResolveReport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminResolveReport>>, {id: string;data: BodyType<AdminResolveReportBody>;params: AdminResolveReportParams}> = (props) => {
+          const {id,data,params} = props ?? {};
+
+          return  adminResolveReport(id,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminResolveReportMutationResult = NonNullable<Awaited<ReturnType<typeof adminResolveReport>>>
+    export type AdminResolveReportMutationBody = BodyType<AdminResolveReportBody>
+    export type AdminResolveReportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Resolve or reject a review report
+ */
+export const useAdminResolveReport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminResolveReport>>, TError,{id: string;data: BodyType<AdminResolveReportBody>;params: AdminResolveReportParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminResolveReport>>,
+        TError,
+        {id: string;data: BodyType<AdminResolveReportBody>;params: AdminResolveReportParams},
+        TContext
+      > => {
+      return useMutation(getAdminResolveReportMutationOptions(options));
     }
 
 export const getAdminAnalyticsSummaryUrl = (params: AdminAnalyticsSummaryParams,) => {

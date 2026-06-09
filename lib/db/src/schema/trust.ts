@@ -48,6 +48,51 @@ export const reviewsTable = pgTable(
   ],
 );
 
+export const reviewResponsesTable = pgTable(
+  "review_responses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => reviewsTable.id),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businessesTable.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id),
+    response: text("response").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("review_responses_review_business_idx").on(t.reviewId, t.businessId),
+    index("review_responses_review_id_idx").on(t.reviewId),
+    index("review_responses_business_id_idx").on(t.businessId),
+  ],
+);
+
+export const reviewReportsTable = pgTable(
+  "review_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => reviewsTable.id),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => usersTable.id),
+    reason: text("reason").notNull(),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("review_reports_reviewer_report_idx").on(t.reviewId, t.reporterId),
+    index("review_reports_review_id_idx").on(t.reviewId),
+    index("review_reports_status_idx").on(t.status),
+  ],
+);
+
 export const feedbackTable = pgTable(
   "feedback",
   {
@@ -76,6 +121,12 @@ export const feedbackTable = pgTable(
 
 export type Review = typeof reviewsTable.$inferSelect;
 export type InsertReview = typeof reviewsTable.$inferInsert;
+
+export type ReviewResponse = typeof reviewResponsesTable.$inferSelect;
+export type InsertReviewResponse = typeof reviewResponsesTable.$inferInsert;
+
+export type ReviewReport = typeof reviewReportsTable.$inferSelect;
+export type InsertReviewReport = typeof reviewReportsTable.$inferInsert;
 
 export type Feedback = typeof feedbackTable.$inferSelect;
 export type InsertFeedback = typeof feedbackTable.$inferInsert;

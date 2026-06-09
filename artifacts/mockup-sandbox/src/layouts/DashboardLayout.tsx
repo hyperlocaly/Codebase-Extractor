@@ -23,6 +23,7 @@ import {
   Scissors,
   ExternalLink,
   ChevronLeft,
+  MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard/products', label: 'Products', icon: Package },
   { to: '/dashboard/services', label: 'Services', icon: Wrench },
   { to: '/dashboard/portfolio', label: 'Portfolio', icon: Images },
+  { to: '/dashboard/reviews', label: 'Reviews', icon: MessageSquare },
   { to: '/dashboard/updates', label: 'Updates', icon: Newspaper },
   { to: '/dashboard/branches', label: 'Branches', icon: MapPin },
   { to: '/dashboard/service-areas', label: 'Service Areas', icon: Globe },

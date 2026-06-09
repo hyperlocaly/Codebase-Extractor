@@ -2,3 +2,5 @@
 - [useListCategories params](list-categories-params.md) — ListCategoriesParams has only `parent?: string`, no marketplace field; hook can be called with no args.
 - [Sprint 8 portfolio implementation](sprint8-portfolio.md) — DB schema additions, backend route fixes, OpenAPI schema updates, dashboard PortfolioPage, PortfolioGrid enhancements.
 - [Workflow startup](workflow-startup.md) — API needs PORT=8080 inline; frontend needs PORT=8081 BASE_PATH=/__mockup; no artifact.toml at root level; push DB schema with pnpm --filter @workspace/db run push.
+- [Orval queryKey required in options](orval-query-options.md) — Orval-generated hooks require queryKey in query options; use getXxxQueryKey helpers and pass enabled alongside queryKey.
+- [Admin OpenAPI void return](admin-openapi-void.md) — Admin list endpoints must have explicit response content schemas in openapi.yaml or Orval generates Promise<void>, causing TData=never in consumers.

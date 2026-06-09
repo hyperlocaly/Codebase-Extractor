@@ -1,11 +1,13 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
-import { eq, and, isNull, desc, ilike, count, avg, sql, gte, lte } from "drizzle-orm";
+import { eq, and, isNull, desc, ilike, count, avg, sql, gte, lte, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   businessesTable,
   claimRequestsTable,
   reviewsTable,
+  reviewResponsesTable,
+  reviewReportsTable,
   usersTable,
   businessOwnersTable,
   notificationsTable,
@@ -299,6 +301,178 @@ router.patch(
       });
 
       sendSuccess(res, updated);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Admin Reviews List ─────────────────────────────────────────────────────────
+
+router.get(
+  "/reviews",
+  requireAuth,
+  requireMarketplace,
+  requirePermission("review:moderate"),
+  async (req, res, next): Promise<void> => {
+    try {
+      const marketplace = req.marketplace!;
+      const {
+        status,
+        moderationStatus,
+        q,
+        limit: rawLimit,
+        cursor: rawCursor,
+      } = req.query as Record<string, string | undefined>;
+      const { limit } = parsePagination(rawLimit, rawCursor);
+
+      const conditions: any[] = [
+        eq(reviewsTable.marketplaceId, marketplace.id),
+        isNull(reviewsTable.deletedAt),
+      ];
+      if (status) conditions.push(eq(reviewsTable.status, status));
+      if (moderationStatus) conditions.push(eq(reviewsTable.moderationStatus, moderationStatus));
+      if (q) conditions.push(ilike(reviewsTable.body, `%${q}%`));
+
+      const rows = await db
+        .select({
+          id: reviewsTable.id,
+          businessId: reviewsTable.businessId,
+          rating: reviewsTable.rating,
+          title: reviewsTable.title,
+          body: reviewsTable.body,
+          status: reviewsTable.status,
+          moderationStatus: reviewsTable.moderationStatus,
+          moderationNote: reviewsTable.moderationNote,
+          isAnonymous: reviewsTable.isAnonymous,
+          createdAt: reviewsTable.createdAt,
+          updatedAt: reviewsTable.updatedAt,
+          reviewer: {
+            id: usersTable.id,
+            displayName: usersTable.displayName,
+            email: usersTable.email,
+          },
+          business: {
+            id: businessesTable.id,
+            name: businessesTable.name,
+            slug: businessesTable.slug,
+          },
+        })
+        .from(reviewsTable)
+        .innerJoin(usersTable, eq(reviewsTable.reviewerId, usersTable.id))
+        .innerJoin(businessesTable, eq(reviewsTable.businessId, businessesTable.id))
+        .where(and(...conditions))
+        .orderBy(desc(reviewsTable.createdAt))
+        .limit(limit + 1);
+
+      const page = rows.slice(0, limit);
+
+      const reviewIds = page.map((r) => r.id);
+      const reportCounts =
+        reviewIds.length > 0
+          ? await db
+              .select({
+                reviewId: reviewReportsTable.reviewId,
+                count: count(reviewReportsTable.id),
+              })
+              .from(reviewReportsTable)
+              .where(and(eq(reviewReportsTable.status, "pending"), inArray(reviewReportsTable.reviewId, reviewIds)))
+              .groupBy(reviewReportsTable.reviewId)
+          : [];
+
+      const reportCountMap = new Map(reportCounts.map((r) => [r.reviewId, Number(r.count)]));
+      const result = page.map((r) => ({ ...r, pendingReports: reportCountMap.get(r.id) ?? 0 }));
+
+      sendPaginated(res, result, buildNextCursor(rows, limit));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Review Reports ─────────────────────────────────────────────────────────────
+
+router.get(
+  "/reports",
+  requireAuth,
+  requireMarketplace,
+  requirePermission("review:moderate"),
+  async (req, res, next): Promise<void> => {
+    try {
+      const marketplace = req.marketplace!;
+      const { status, limit: rawLimit, cursor: rawCursor } = req.query as Record<string, string | undefined>;
+      const { limit } = parsePagination(rawLimit, rawCursor);
+
+      const conditions: any[] = [eq(reviewsTable.marketplaceId, marketplace.id)];
+      if (status) conditions.push(eq(reviewReportsTable.status, status));
+
+      const rows = await db
+        .select({
+          id: reviewReportsTable.id,
+          reason: reviewReportsTable.reason,
+          status: reviewReportsTable.status,
+          createdAt: reviewReportsTable.createdAt,
+          reporter: {
+            id: usersTable.id,
+            displayName: usersTable.displayName,
+          },
+          review: {
+            id: reviewsTable.id,
+            rating: reviewsTable.rating,
+            title: reviewsTable.title,
+            body: reviewsTable.body,
+            status: reviewsTable.status,
+            moderationStatus: reviewsTable.moderationStatus,
+            businessId: reviewsTable.businessId,
+          },
+          business: {
+            id: businessesTable.id,
+            name: businessesTable.name,
+            slug: businessesTable.slug,
+          },
+        })
+        .from(reviewReportsTable)
+        .innerJoin(usersTable, eq(reviewReportsTable.reporterId, usersTable.id))
+        .innerJoin(reviewsTable, eq(reviewReportsTable.reviewId, reviewsTable.id))
+        .innerJoin(businessesTable, eq(reviewsTable.businessId, businessesTable.id))
+        .where(and(...conditions))
+        .orderBy(desc(reviewReportsTable.createdAt))
+        .limit(limit + 1);
+
+      sendPaginated(res, rows.slice(0, limit), buildNextCursor(rows, limit));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.patch(
+  "/reports/:id",
+  requireAuth,
+  requireMarketplace,
+  requirePermission("review:moderate"),
+  async (req, res, next): Promise<void> => {
+    try {
+      const id = String(req.params["id"]);
+
+      const { status } = z
+        .object({ status: z.enum(["resolved", "rejected"]) })
+        .parse(req.body);
+
+      const [existing] = await db
+        .select()
+        .from(reviewReportsTable)
+        .where(eq(reviewReportsTable.id, id));
+      if (!existing) return next(new NotFoundError("Report", id));
+      if (existing.status !== "pending") return next(new ValidationError("Report is already resolved"));
+
+      const [updated] = await db
+        .update(reviewReportsTable)
+        .set({ status })
+        .where(eq(reviewReportsTable.id, id))
+        .returning();
+
+      sendSuccess(res, { data: updated });
     } catch (err) {
       next(err);
     }

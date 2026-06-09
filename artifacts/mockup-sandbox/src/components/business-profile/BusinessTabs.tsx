@@ -1,14 +1,21 @@
+import { useState } from 'react';
 import type {
   GetBusiness200,
   GetBusinessHours200,
   ListBusinessContacts200,
   ListProducts200,
   ListServices200,
-  ListReviews200,
   GetReviewSummary200,
   ListBusinessUpdates200,
   BusinessUpdateItem,
   PortfolioCollection,
+  ReviewSummary as ReviewSummaryType,
+  ReviewResponse,
+} from '@workspace/api-client-react';
+import {
+  useListReviews,
+  useAuthMe,
+  ListReviewsSort,
 } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoursTable } from './HoursTable';
@@ -16,12 +23,15 @@ import { ProductList } from './ProductList';
 import { ServiceList } from './ServiceList';
 import { PortfolioGrid } from './PortfolioGrid';
 import { ReviewSummary } from './ReviewSummary';
-import { ReviewList } from './ReviewList';
+import { ReviewList, type SortOption } from './ReviewList';
+import { ReviewForm } from './ReviewForm';
 import { UpdatesList } from './UpdatesList';
 import { Separator } from '@/components/ui/separator';
 import { Globe, Info, Images, MessageSquare, Package, Rss, Scissors } from 'lucide-react';
+import { MARKETPLACE_SLUG } from '@/lib/constants';
 
 type BusinessDetail = NonNullable<GetBusiness200['data']>;
+type ReviewWithResponse = ReviewSummaryType & { ownerResponse?: ReviewResponse | null };
 
 interface BusinessTabsProps {
   business: BusinessDetail;
@@ -40,8 +50,6 @@ interface BusinessTabsProps {
   portfoliosLoading: boolean;
   portfoliosError?: boolean;
   onRetryPortfolios?: () => void;
-  reviews: NonNullable<ListReviews200['data']>;
-  reviewsLoading: boolean;
   reviewSummary: NonNullable<GetReviewSummary200['data']> | undefined;
   updates: NonNullable<ListBusinessUpdates200['data']>;
   updatesLoading: boolean;
@@ -146,6 +154,64 @@ function AboutTab({
   );
 }
 
+function ReviewsSection({
+  businessId,
+  reviewSummary,
+}: {
+  businessId: string;
+  reviewSummary: NonNullable<GetReviewSummary200['data']> | undefined;
+}) {
+  const [sort, setSort] = useState<SortOption>('newest');
+  const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
+
+  const { data: meData } = useAuthMe();
+  const isAuthenticated = !!(meData as any)?.data;
+
+  const {
+    data: reviewsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useListReviews({
+    businessId,
+    marketplace: MARKETPLACE_SLUG,
+    limit: 50,
+    sort: sort as ListReviewsSort,
+    rating: ratingFilter,
+  });
+
+  const reviews = (reviewsData?.data ?? []) as ReviewWithResponse[];
+
+  const userReviewId = isAuthenticated
+    ? (meData as any)?.data?.id
+    : null;
+  const hasExistingReview = !!userReviewId && reviews.some(
+    (r) => !r.isAnonymous && (r as any).reviewerId === userReviewId,
+  );
+
+  return (
+    <div className="space-y-5">
+      <ReviewSummary summary={reviewSummary} />
+      <ReviewList
+        reviews={reviews}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => refetch()}
+        sort={sort}
+        onSortChange={setSort}
+        ratingFilter={ratingFilter}
+        onRatingFilterChange={setRatingFilter}
+        isAuthenticated={isAuthenticated}
+      />
+      <ReviewForm
+        businessId={businessId}
+        onSuccess={() => refetch()}
+        hasExistingReview={hasExistingReview}
+      />
+    </div>
+  );
+}
+
 const TAB_TRIGGER_CLASS =
   'relative rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none';
 
@@ -166,8 +232,6 @@ export function BusinessTabs(props: BusinessTabsProps) {
     portfoliosLoading,
     portfoliosError,
     onRetryPortfolios,
-    reviews,
-    reviewsLoading,
     reviewSummary,
     updates,
     updatesLoading,
@@ -254,9 +318,11 @@ export function BusinessTabs(props: BusinessTabsProps) {
           />
         </TabsContent>
 
-        <TabsContent value="reviews" className="mt-0 space-y-5">
-          <ReviewSummary summary={reviewSummary} />
-          <ReviewList reviews={reviews} isLoading={reviewsLoading} />
+        <TabsContent value="reviews" className="mt-0">
+          <ReviewsSection
+            businessId={business.id}
+            reviewSummary={reviewSummary}
+          />
         </TabsContent>
       </div>
     </Tabs>
