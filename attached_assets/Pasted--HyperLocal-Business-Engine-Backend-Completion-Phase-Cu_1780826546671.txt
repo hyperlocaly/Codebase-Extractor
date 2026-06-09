@@ -1,0 +1,253 @@
+# HyperLocal Business Engine — Backend Completion Phase
+
+Current status accepted:
+
+* 79/79 tests passing
+* OpenAPI generating successfully
+* Business registration flow working
+* Auto business_owner assignment working
+* CORS verified
+* Health endpoints verified
+* FRONTEND.md completed
+
+Before frontend implementation begins, complete the remaining backend readiness work.
+
+## Priority 1 — Search Infrastructure
+
+Implement the full search pipeline.
+
+### Search Projection
+
+Create:
+
+search_documents
+
+Fields:
+
+* id
+* entity_type
+* entity_id
+* marketplace_id
+* title
+* description
+* location_id
+* category_ids
+* verification_score
+* search_vector
+* created_at
+* updated_at
+
+Indexes:
+
+* GIN(search_vector)
+* marketplace_id
+* entity_type
+* location_id
+
+### Outbox Consumers
+
+Implement consumers for:
+
+* BusinessPublished
+* BusinessUpdated
+* BusinessTypeAssigned
+* VerificationUpdated
+* BusinessScoreRecalculated
+* ProductCreated
+* ProductUpdated
+* ProductDeleted
+* ServiceCreated
+* ServiceUpdated
+* ServiceDeleted
+* PortfolioPublished
+* UpdatePublished
+
+Each consumer updates search_documents.
+
+### Search Sync Worker
+
+Implement:
+
+infrastructure/search/sync-worker.ts
+
+Requirements:
+
+* batch processing
+* retries
+* exponential backoff
+* dead-letter handling
+
+### Search API
+
+Verify:
+
+GET /api/v1/search/businesses
+
+GET /api/v1/search/products
+
+GET /api/v1/search/services
+
+GET /api/v1/search/updates
+
+GET /api/v1/search/suggestions
+
+must read from projections only.
+
+Never query operational tables directly.
+
+---
+
+## Priority 2 — Business Search Projection
+
+Current business_list_cache must become a true read model.
+
+Rules:
+
+* maintained by events only
+* never written by API handlers
+* rebuilt through projection workers
+
+Create:
+
+business-projection-rebuilder.ts
+
+Capabilities:
+
+* rebuild one business
+* rebuild marketplace
+* full rebuild
+
+Required for recovery scenarios.
+
+---
+
+## Priority 3 — Outbox Reliability
+
+Audit current outbox implementation.
+
+Verify:
+
+* transaction-safe publishing
+* retry_count support
+* exponential backoff
+* poison message protection
+* dead_letter_events support
+
+Add integration tests.
+
+No event may block queue processing.
+
+---
+
+## Priority 4 — Analytics Jobs
+
+Implement:
+
+business-daily.job.ts
+
+marketplace-daily.job.ts
+
+Requirements:
+
+* idempotent
+* UTC aggregation
+* reads engagement_events only
+* writes aggregate tables only
+
+No analytics calculated at query time.
+
+---
+
+## Priority 5 — Notification Delivery
+
+Implement:
+
+notification dispatcher
+
+email sender
+
+delivery tracking
+
+Required fields:
+
+* attempt_count
+* last_attempt_at
+* last_error
+* sent_at
+* delivered_at
+
+Worker must support retries.
+
+---
+
+## Priority 6 — Launch Hardening
+
+Add:
+
+### Metrics
+
+GET /api/v1/metrics
+
+Expose:
+
+* request count
+* p95 latency
+* outbox depth
+* job queue depth
+* search queue depth
+
+### Rate Limiting Validation
+
+Verify:
+
+* public endpoints
+* authenticated endpoints
+* engagement endpoints
+
+### Audit Logging Validation
+
+Verify all mutating endpoints generate audit records.
+
+---
+
+## Priority 7 — Recovery Tooling
+
+Create scripts:
+
+scripts/rebuild-search.ts
+
+scripts/rebuild-business-projections.ts
+
+scripts/replay-dead-letter-events.ts
+
+scripts/recalculate-business-scores.ts
+
+These tools are required before production launch.
+
+---
+
+## Final Acceptance Gate
+
+Backend is considered frontend-ready only when:
+
+□ Search indexing works automatically
+
+□ Search APIs return indexed data
+
+□ Business projections rebuild correctly
+
+□ Outbox reliability verified
+
+□ Analytics jobs operational
+
+□ Notification delivery operational
+
+□ Metrics endpoint operational
+
+□ Recovery scripts operational
+
+□ Full integration suite passing
+
+□ OpenAPI regenerated successfully
+
+Only after these are complete should frontend implementation begin.

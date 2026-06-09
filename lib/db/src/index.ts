@@ -4,13 +4,22 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+if (!process.env["DATABASE_URL"]) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({
+  connectionString: process.env["DATABASE_URL"],
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
+
 export const db = drizzle(pool, { schema });
+
+export type Db = typeof db;
+export type DbOrTx = Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db;
 
 export * from "./schema";

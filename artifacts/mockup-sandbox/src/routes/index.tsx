@@ -1,0 +1,277 @@
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import RootLayout from '@/layouts/RootLayout';
+import AuthLayout from '@/layouts/AuthLayout';
+import DashboardLayout from '@/layouts/DashboardLayout';
+import AdminLayout from '@/layouts/AdminLayout';
+import { RequireAuth } from './guards/RequireAuth';
+import { RequireRole } from './guards/RequireRole';
+import { DashboardProvider } from '@/providers/DashboardProvider';
+
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
+const VerifyEmailPage = lazy(() => import('@/pages/auth/VerifyEmailPage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const ForbiddenPage = lazy(() => import('@/pages/ForbiddenPage'));
+const HomePage = lazy(() => import('@/pages/home/HomePage'));
+const DirectoryPage = lazy(() => import('@/pages/directory/DirectoryPage'));
+const CategoryPage = lazy(() => import('@/pages/category/CategoryPage'));
+const BusinessProfilePage = lazy(() => import('@/pages/business/BusinessProfilePage'));
+const SearchPage = lazy(() => import('@/pages/search/SearchPage'));
+const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
+const OnboardingPage = lazy(() => import('@/pages/dashboard/OnboardingPage'));
+const ProfilePage = lazy(() => import('@/pages/dashboard/ProfilePage'));
+const HoursPage = lazy(() => import('@/pages/dashboard/HoursPage'));
+const ContactsPage = lazy(() => import('@/pages/dashboard/ContactsPage'));
+const ProductsPage = lazy(() => import('@/pages/dashboard/ProductsPage'));
+const ServicesPage = lazy(() => import('@/pages/dashboard/ServicesPage'));
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
+function withSuspense(Component: React.ComponentType) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  );
+}
+
+const basename = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
+export const router = createBrowserRouter(
+  [
+    {
+      path: '/403',
+      element: withSuspense(ForbiddenPage),
+    },
+    {
+      path: '/404',
+      element: withSuspense(NotFoundPage),
+    },
+    {
+      element: <AuthLayout />,
+      children: [
+        { path: '/login', element: withSuspense(LoginPage) },
+        { path: '/register', element: withSuspense(RegisterPage) },
+        { path: '/verify-email', element: withSuspense(VerifyEmailPage) },
+      ],
+    },
+    {
+      element: <RootLayout />,
+      children: [
+        {
+          path: '/',
+          element: withSuspense(HomePage),
+        },
+        {
+          path: '/directory',
+          element: withSuspense(DirectoryPage),
+        },
+        {
+          path: '/search',
+          element: withSuspense(SearchPage),
+        },
+        {
+          path: '/business/:slug',
+          element: withSuspense(BusinessProfilePage),
+        },
+        {
+          path: '/category/:slug',
+          element: withSuspense(CategoryPage),
+        },
+        {
+          element: <RequireAuth />,
+          children: [
+            {
+              path: '/saved',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Saved items — coming in Sprint 9
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/notifications',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Notifications — coming in Sprint 9
+                  </p>
+                </div>
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      element: <RequireAuth />,
+      children: [
+        {
+          element: (
+            <DashboardProvider>
+              <DashboardLayout />
+            </DashboardProvider>
+          ),
+          children: [
+            {
+              path: '/dashboard',
+              element: withSuspense(DashboardPage),
+            },
+            {
+              path: '/dashboard/onboarding',
+              element: withSuspense(OnboardingPage),
+            },
+            {
+              path: '/dashboard/profile',
+              element: withSuspense(ProfilePage),
+            },
+            {
+              path: '/dashboard/hours',
+              element: withSuspense(HoursPage),
+            },
+            {
+              path: '/dashboard/contacts',
+              element: withSuspense(ContactsPage),
+            },
+            {
+              path: '/dashboard/products',
+              element: withSuspense(ProductsPage),
+            },
+            {
+              path: '/dashboard/services',
+              element: withSuspense(ServicesPage),
+            },
+            {
+              path: '/dashboard/portfolio',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Portfolio — coming in Sprint 8
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/dashboard/updates',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Updates — coming in Sprint 7
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/dashboard/branches',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Branches — coming in Sprint 8
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/dashboard/service-areas',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Service areas — coming in Sprint 8
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/dashboard/verification',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Verification — coming in Sprint 8
+                  </p>
+                </div>
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      element: (
+        <RequireRole
+          roles={['marketplace_admin', 'marketplace_moderator', 'marketplace_analyst']}
+        />
+      ),
+      children: [
+        {
+          element: <AdminLayout />,
+          children: [
+            {
+              path: '/admin',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Admin dashboard — coming in Sprint 10
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/admin/businesses',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Business management — coming in Sprint 10
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/admin/claims',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Claim requests — coming in Sprint 10
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/admin/reviews',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Review moderation — coming in Sprint 10
+                  </p>
+                </div>
+              ),
+            },
+            {
+              path: '/admin/analytics',
+              element: (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Analytics — coming in Sprint 10
+                  </p>
+                </div>
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      path: '*',
+      element: <Navigate to="/404" replace />,
+    },
+  ],
+  { basename },
+);

@@ -1,0 +1,183 @@
+SPRINT 6 IMPLEMENTATION INSTRUCTIONS
+
+Do not start coding immediately.
+
+First perform a Sprint 6 Pre-Flight Validation and confirm every dependency exists before modifying any file.
+
+PHASE 1 — PRE-FLIGHT VALIDATION
+
+Validate and report:
+
+1. Existing businesses routes
+2. Existing businessOwners table/schema
+3. Existing authentication middleware
+4. Existing marketplace middleware
+5. Existing OpenAPI patterns for paginated responses
+6. Existing generated hooks structure
+7. Existing DashboardLayout route structure
+8. Existing React Query provider structure
+
+Confirm whether the proposed GET /api/v1/businesses/mine endpoint can reuse the existing PaginatedBusinessList schema without modification.
+
+Do not write code until validation is complete.
+
+---
+
+PHASE 2 — BACKEND FOUNDATION (MANDATORY FIRST)
+
+Implement:
+
+GET /api/v1/businesses/mine
+
+Requirements:
+
+* requireAuth
+* requireMarketplace
+* return only businesses owned by current user
+* exclude deleted businesses
+* marketplace scoped
+* support pagination
+* reuse PaginatedBusinessList response shape
+
+Update OpenAPI specification.
+
+Run codegen.
+
+Verify:
+
+* useListMyBusinesses is generated
+* types compile correctly
+* endpoint returns 200 for authenticated user
+* endpoint returns 401 for unauthenticated user
+
+Stop and report verification before frontend work begins.
+
+---
+
+PHASE 3 — DASHBOARD FOUNDATION
+
+Create DashboardProvider.
+
+Responsibilities:
+
+* load owned businesses
+* expose:
+  business
+  businessId
+  businessSlug
+  isLoading
+  refetch
+
+Behavior:
+
+* loading state
+* no-business state
+* owned-business state
+
+Wrap DashboardLayout with DashboardProvider.
+
+Verify provider functionality before building pages.
+
+---
+
+PHASE 4 — PAGE IMPLEMENTATION
+
+Implement ONLY:
+
+1. DashboardPage
+2. OnboardingPage
+3. ProfilePage
+4. HoursPage
+5. ContactsPage
+
+Follow the approved Sprint 6 specification exactly.
+
+Do not add:
+
+* products management
+* services management
+* media uploads
+* portfolio management
+* verification features
+* branches
+* service areas
+
+Those belong to later sprints.
+
+---
+
+PHASE 5 — TEST JOURNEYS (MANDATORY)
+
+Execute and verify the following journeys.
+
+Scenario A — New Business Owner
+
+1. Register user
+2. Login
+3. Open dashboard
+4. Empty state displayed
+5. Click Create Business
+6. Complete onboarding
+7. Redirect to dashboard
+8. Business visible in owned businesses
+9. Public profile route works
+10. Search can find business
+
+Scenario B — Profile Editing
+
+1. Open profile page
+2. Modify fields
+3. Save
+4. Refresh
+5. Changes persist
+
+Scenario C — Opening Hours
+
+1. Configure hours
+2. Save
+3. Refresh
+4. Hours persist
+
+Scenario D — Contacts
+
+1. Create contact
+2. Edit contact
+3. Delete contact
+4. Refresh
+5. State remains correct
+
+---
+
+PHASE 6 — QUALITY GATES
+
+Must pass before Sprint 6 is considered complete:
+
+* api-server typecheck
+* mockup-sandbox typecheck
+* production build
+* route verification
+* endpoint verification
+* no console errors
+* no TypeScript errors
+* no placeholder pages remaining for Sprint 6 routes
+
+---
+
+PHASE 7 — DELIVERY REPORT
+
+Provide:
+
+1. Files created
+2. Files modified
+3. API changes
+4. Generated hooks
+5. Verification results
+6. Screenshots or route checks
+7. Known limitations
+8. Future Sprint dependencies
+
+Do not begin Sprint 7.
+
+Do not implement products or services management.
+
+Sprint 6 ends only when all verification steps pass.

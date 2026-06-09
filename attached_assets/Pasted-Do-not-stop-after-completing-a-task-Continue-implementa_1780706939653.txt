@@ -1,0 +1,219 @@
+Do not stop after completing a task.
+
+Continue implementation autonomously until ALL roadmap phases are fully implemented, tested, and integrated.
+
+Current state:
+- Infrastructure, templates, business engine, inventory, portfolio, search, trust, engagement, analytics, admin, and Fashion Nigeria seeds have partial implementation.
+- Continue from the current codebase.
+- Do not ask for permission between tasks.
+- Do not propose plans.
+- Execute and report only after a meaningful batch is complete.
+
+Mandatory completion requirements:
+
+1. RBAC COMPLETION
+- Replace all stub guards.
+- Implement full role/permission enforcement using:
+  - roles
+  - permissions
+  - role_permissions
+  - user_roles
+- Route-level requirePermission() middleware.
+- Marketplace-scoped permission checks.
+- Organization-scoped permission checks.
+- Business ownership checks.
+- Integration tests for every role.
+
+2. OUTBOX ARCHITECTURE
+Implement completely:
+- domain_event_outbox publisher
+- outbox worker
+- event registry
+- consumer checkpoints
+- retry handling
+- dead-letter handling
+- transactional event publishing
+
+All state-changing operations must publish events.
+
+3. BACKGROUND JOB SYSTEM
+Implement:
+- background_jobs queue
+- jobs worker
+- job registry
+- retry logic
+- failure tracking
+- scheduled jobs
+
+Register:
+- score recalculation
+- analytics aggregation
+- notification dispatch
+- search synchronization
+
+4. SEARCH COMPLETION
+Implement:
+- search_sync_queue worker
+- business_list_cache maintenance
+- search_logs recording
+- suggestions endpoint
+- product search
+- service search
+- update search
+- reindex jobs
+
+5. VERIFICATION SYSTEM
+Complete:
+- verification_records
+- verification_workflows
+- verification review queue
+- approve/reject/request evidence
+- score recalculation integration
+- notification generation
+
+6. NOTIFICATIONS
+Implement:
+- notification creation
+- notification API
+- read
+- read all
+- email dispatch jobs
+- SMTP integration
+- event-driven notifications
+
+7. ANALYTICS COMPLETION
+Implement:
+- business_analytics_daily aggregation jobs
+- marketplace_analytics_daily aggregation jobs
+- dashboards
+- top categories
+- top locations
+- search metrics
+- zero-result rate
+
+8. MEDIA SYSTEM
+Implement:
+- upload pipeline
+- presigned uploads
+- media processing states
+- attach media to:
+  - businesses
+  - products
+  - services
+  - portfolio items
+  - updates
+
+9. MARKETPLACE AUTO-CONFIGURATION
+Implement fully:
+
+Location Templates:
+- Country template
+- State/Province template
+- Region template
+- LGA template
+- City template
+- Area/Neighborhood template
+
+Category Templates:
+- Root Category
+- Subcategory
+- Type
+
+Rules:
+- Admin can create/edit/delete templates.
+- Marketplace can assign templates.
+- Marketplace can set default location template.
+- Marketplace can set default category template.
+
+Default Location Behavior:
+- If marketplace has default country:
+  users DO NOT choose country.
+  Country is auto-assigned.
+  Users only select lower levels.
+
+Example:
+Fashion Nigeria:
+Nigeria (hidden)
+→ State
+→ LGA
+→ Area
+
+Default Category Behavior:
+- If marketplace has a default root category:
+  root category is hidden.
+  users only select:
+    subcategory
+    type
+
+Example:
+Fashion Nigeria:
+Fashion & Tailoring (hidden)
+→ Tailor
+→ Agbada Specialist
+
+10. MULTI-TENANT VALIDATION
+Audit entire codebase:
+- Every marketplace-scoped query must include marketplace_id filtering.
+- Fix violations.
+- Add integration tests.
+
+11. TESTING
+Build:
+- unit tests
+- integration tests
+- E2E tests
+
+Requirements:
+- Every endpoint tested.
+- RBAC tested.
+- Marketplace isolation tested.
+- Outbox assertions tested.
+- Idempotency tested.
+
+12. OPENAPI
+Bring specification to full parity with implementation.
+Regenerate clients.
+Resolve all mismatches.
+
+13. PRODUCTION READINESS
+Implement:
+- health endpoints
+- readiness endpoints
+- metrics endpoint
+- Prometheus metrics
+- rate limiting
+- audit logging
+- graceful shutdown
+
+14. FINAL AUDIT
+
+Do not stop until you have produced:
+
+A. Completion matrix:
+- Phase
+- Status
+- Tables
+- Endpoints
+- Events
+- Jobs
+- Tests
+
+B. Gap report:
+- Anything remaining
+- Technical debt
+- Deferred items
+
+C. Production readiness checklist:
+- Passed / Failed
+
+D. Final counts:
+- Tables
+- Endpoints
+- Event types
+- Workers
+- Jobs
+- Tests
+- OpenAPI paths
+
+Do not ask what to do next.
+Continue executing until the implementation backlog is exhausted or a hard technical blocker is encountered.

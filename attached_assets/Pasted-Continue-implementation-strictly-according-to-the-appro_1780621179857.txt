@@ -1,0 +1,218 @@
+Continue implementation strictly according to the approved HyperLocal Business Engine Master Plan and Implementation Invariants.
+
+IMPORTANT: Do not stop at the location search endpoint. Continue execution of all remaining roadmap phases until completion.
+
+Additional requirements and clarifications:
+
+LOCATION TEMPLATE SYSTEM
+
+1. Convert Geography into a reusable Location Template system.
+
+2. A Location Template contains:
+
+   * Country
+   * Location Level Definitions
+   * Full Location Hierarchy
+   * Default Marketplace Configuration
+
+3. Example templates:
+
+   * Nigeria Template
+   * Ghana Template
+   * Kenya Template
+   * South Africa Template
+
+4. Admin capabilities:
+
+   * Create Template
+   * Clone Template
+   * Edit Template
+   * Delete Template
+   * Activate Template
+   * Set Template as Marketplace Default
+
+5. Location autocomplete/search must work across the entire hierarchy:
+
+   * State
+   * Region
+   * Province
+   * County
+   * LGA
+   * City
+   * District
+   * Area
+   * Neighborhood
+
+6. Add endpoint:
+
+GET /api/v1/locations/search?q=
+
+Requirements:
+
+* Prefix search
+* Trigram fuzzy search
+* Slug search
+* Parent location filtering
+* Marketplace-scoped results
+* Cursor pagination
+
+DEFAULT LOCATION BEHAVIOR
+
+7. Add marketplace setting:
+
+default_location_template_id
+
+8. When a marketplace has a default location template:
+
+   Example:
+   Marketplace Country = Nigeria
+
+   Registration forms must NOT ask the user to select country.
+
+   Users should start selection from the next available level:
+
+   State → LGA → Area
+
+9. Location APIs must expose:
+
+GET /api/v1/marketplaces/{id}/location-config
+
+Response should indicate:
+
+* country
+* default location template
+* selectable levels
+* hidden levels
+
+CATEGORY TEMPLATE SYSTEM
+
+10. Convert categories into reusable Category Templates.
+
+11. A Category Template contains:
+
+* Root Category
+* Sub Categories
+* Types
+* Marketplace Feature Defaults
+
+12. Example templates:
+
+* Fashion & Tailoring
+* Real Estate
+* Automobile
+* Food & Restaurants
+* Healthcare
+* Education
+* Beauty & Wellness
+
+13. Admin capabilities:
+
+* Create Template
+* Clone Template
+* Edit Template
+* Delete Template
+* Activate Template
+* Set Template as Marketplace Default
+
+14. Add endpoint:
+
+GET /api/v1/categories/template-config
+
+15. When a marketplace has a default category template:
+
+Example:
+Marketplace = Fashion Nigeria
+
+Users should NOT select a root category.
+
+Users should only select:
+
+Sub Category
+Type
+
+Example:
+
+Fashion & Tailoring (hidden root)
+
+User sees:
+Tailor
+Fashion Designer
+Fabric Seller
+
+Then:
+
+Tailor
+-> Agbada Specialist
+-> Senator Specialist
+-> Wedding Wear Specialist
+
+PHASE COMPLETION REQUIREMENT
+
+16. After implementing templates, continue execution of the remaining roadmap phases in order:
+
+Phase 6
+Business Engine
+
+Phase 7
+Inventory Engine
+
+Phase 8
+Portfolio & Content
+
+Phase 9
+Search Engine
+
+Phase 10
+Trust & Engagement
+
+Phase 11
+Analytics Foundation
+
+Phase 12
+Admin & Operations
+
+Phase 13
+Fashion Nigeria Launch Readiness
+
+17. Follow all implementation invariants:
+
+* Marketplace isolation
+* Outbox pattern
+* RBAC first
+* Cursor pagination only
+* Idempotency support
+* UTC timestamps
+* E.164 phone storage
+* Event-driven module boundaries
+
+18. Update:
+
+* OpenAPI specification
+* Orval code generation
+* Integration tests
+* Seed scripts
+* Documentation
+
+19. Do not stop after creating endpoints. Continue until:
+
+* schema
+* services
+* routes
+* workers
+* events
+* seeds
+* tests
+* OpenAPI
+* codegen
+  are complete for each phase.
+
+20. At the end of every implementation batch provide:
+
+* Completed roadmap items
+* New migrations created
+* New endpoints added
+* New events added
+* Tests added
+* Remaining roadmap items
+
+Proceed from the current codebase state and continue execution until the roadmap reaches Phase 13 completion.

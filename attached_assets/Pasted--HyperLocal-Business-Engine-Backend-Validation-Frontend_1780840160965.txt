@@ -1,0 +1,267 @@
+# HyperLocal Business Engine – Backend Validation & Frontend Readiness Audit
+
+The backend implementation phase is considered feature-complete.
+
+Your task is NOT to build new functionality.
+
+Your task is to perform a comprehensive production-readiness audit and provide evidence for every claim.
+
+## Objective
+
+Prove that the backend is genuinely ready for frontend development.
+
+Do not provide summaries without evidence.
+
+For every completed item include:
+
+* Commands executed
+* Relevant logs
+* HTTP requests/responses
+* SQL query results
+* Test output
+* Any warnings or failures encountered
+
+---
+
+# Phase 1 – Database Validation
+
+Provide evidence for:
+
+1. Total applied migrations
+2. Migration history
+3. Existing tables
+4. Row counts for critical tables
+
+Run and report:
+
+* users
+* organizations
+* marketplaces
+* countries
+* locations
+* categories
+* businesses
+* business_owners
+* roles
+* permissions
+* role_permissions
+* domain_event_outbox
+* search_sync_queue
+* notifications
+
+Show actual query results.
+
+---
+
+# Phase 2 – Seed Validation
+
+Verify all seed scripts succeeded.
+
+Provide counts and sample rows for:
+
+* currencies
+* countries
+* roles
+* permissions
+* verification_types
+* event_type_registry
+* fashion categories
+* nigeria locations
+
+Confirm:
+
+* Nigeria exists
+* Lagos exists
+* Abuja exists
+* Fashion & Tailoring root category exists
+* Marketplace exists
+
+Show evidence.
+
+---
+
+# Phase 3 – Core Workflow Validation
+
+Execute and document the complete flows.
+
+## Consumer Flow
+
+Register User
+Verify Email
+Login
+Get Profile
+Browse Categories
+Browse Locations
+
+Show request and response payloads.
+
+## Business Owner Flow
+
+Register User
+Login
+Create Business
+Verify auto-assignment of business_owner role
+Update Business
+Add Contact
+Add Service Area
+Add Branch
+Create Product
+Create Service
+Create Portfolio
+
+Show request and response payloads.
+
+## Admin Flow
+
+Create claim
+Review claim
+Approve claim
+Verify ownership transfer
+Verify notification creation
+
+Show evidence.
+
+---
+
+# Phase 4 – Outbox & Event Validation
+
+For each workflow verify events are written.
+
+Check:
+
+* UserRegistered
+* UserEmailVerified
+* BusinessRegistered
+* BusinessPublished
+* ClaimSubmitted
+* ClaimApproved
+* ProductCreated
+* ServiceCreated
+
+Show actual rows from domain_event_outbox.
+
+Confirm events are being processed correctly.
+
+---
+
+# Phase 5 – Search Validation
+
+Verify search functionality.
+
+Create a new business.
+
+Then:
+
+* Search by business name
+* Search by category
+* Search by location
+
+Confirm results appear.
+
+If search indexing is incomplete:
+
+* identify gaps
+* estimate work required
+* provide implementation plan
+
+---
+
+# Phase 6 – Media Validation
+
+Test:
+
+* upload-url endpoint
+* media confirmation
+* media retrieval
+
+Confirm:
+
+* media record created
+* status changes correctly
+* retrieval works
+
+Show evidence.
+
+---
+
+# Phase 7 – Analytics Validation
+
+Verify:
+
+* engagement event insertion
+* saved item insertion
+* analytics aggregation jobs
+* analytics endpoints
+
+Show evidence from:
+
+* engagement_events
+* business_analytics_daily
+* marketplace_analytics_daily
+
+---
+
+# Phase 8 – API Contract Audit
+
+Audit OpenAPI.
+
+Provide:
+
+1. Total endpoints
+2. Missing endpoints
+3. Duplicate endpoints
+4. Broken schemas
+5. Missing request examples
+6. Missing response examples
+
+Confirm frontend generation is safe.
+
+---
+
+# Phase 9 – Test Audit
+
+Run all test suites.
+
+Provide:
+
+* total tests
+* passing tests
+* failing tests
+* skipped tests
+* coverage summary
+
+If coverage reports exist, include them.
+
+---
+
+# Phase 10 – Frontend Readiness Report
+
+Produce a final report containing:
+
+## Ready
+
+List everything verified.
+
+## Not Ready
+
+List any blockers.
+
+## Technical Debt
+
+List items that should be addressed later.
+
+## Frontend Start Recommendation
+
+Provide a confidence score:
+
+0–100%
+
+Only recommend frontend development if all critical workflows are proven with evidence.
+
+Do not build new features.
+
+Do not refactor.
+
+Do not speculate.
+
+Focus entirely on validation, verification, evidence collection, and launch readiness assessment.

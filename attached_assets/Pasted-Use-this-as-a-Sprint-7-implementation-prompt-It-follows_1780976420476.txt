@@ -1,0 +1,519 @@
+Use this as a **Sprint 7 implementation prompt**. It follows the same pattern that has been working well: audit first, validate dependencies, then implement in phases with verification after each phase.
+
+---
+
+# SPRINT 7 — PRODUCTS & SERVICES MANAGEMENT
+
+## IMPORTANT EXECUTION RULES
+
+Do NOT start coding immediately.
+
+Follow this process exactly:
+
+### Phase 1 — Audit
+
+Read existing code and produce a validation report.
+
+Do NOT modify files.
+
+Verify:
+
+* Existing products routes
+* Existing services routes
+* Database tables
+* OpenAPI schemas
+* Generated React Query hooks
+* DashboardProvider context
+* Dashboard routes
+* Existing business ownership checks
+* Existing upload/image infrastructure
+* Existing pagination patterns
+* Existing search integration
+
+Produce a report showing:
+
+* What already exists
+* What is missing
+* Potential blockers
+* Recommended implementation order
+
+Wait until audit is complete before writing code.
+
+---
+
+## Sprint Goal
+
+Business owners must be able to:
+
+### Products
+
+* Create products
+* Edit products
+* Delete products
+* View product list
+* Mark products active/inactive
+* Add product price
+* Add description
+* Add images
+* Manage inventory status
+
+### Services
+
+* Create services
+* Edit services
+* Delete services
+* View service list
+* Set price ranges
+* Add descriptions
+* Add images
+* Mark active/inactive
+
+All functionality must be restricted to business owners.
+
+---
+
+# Phase 2 — Backend Validation
+
+Verify whether the following already exist:
+
+### Product APIs
+
+* GET /products
+* GET /products/:slug
+* POST /products
+* PATCH /products/:id
+* DELETE /products/:id
+
+### Service APIs
+
+* GET /services
+* GET /services/:slug
+* POST /services
+* PATCH /services/:id
+* DELETE /services/:id
+
+Verify:
+
+* ownership enforcement
+* marketplace enforcement
+* validation schemas
+* OpenAPI documentation
+
+Produce findings before modifications.
+
+---
+
+# Phase 3 — Ownership Security
+
+Verify every mutation is protected.
+
+Products:
+
+Only business owners may:
+
+* create
+* edit
+* delete
+
+Services:
+
+Only business owners may:
+
+* create
+* edit
+* delete
+
+If ownership middleware does not exist:
+
+Create reusable middleware.
+
+Example:
+
+requireBusinessOwner
+
+This middleware should:
+
+* verify authenticated user
+* verify ownership in businessOwners table
+* reject unauthorized access
+
+Use one shared implementation.
+
+---
+
+# Phase 4 — OpenAPI & Codegen
+
+Ensure all endpoints have complete schemas.
+
+Products:
+
+Required generated types:
+
+* ProductSummary
+* ProductDetail
+* CreateProductRequest
+* UpdateProductRequest
+
+Services:
+
+Required generated types:
+
+* ServiceSummary
+* ServiceDetail
+* CreateServiceRequest
+* UpdateServiceRequest
+
+After updates:
+
+Run code generation.
+
+Verify:
+
+* React Query hooks generated
+* No Promise<void> issues
+* No missing response schemas
+
+---
+
+# Phase 5 — Dashboard Pages
+
+Create:
+
+### ProductsPage
+
+Route:
+
+/dashboard/products
+
+Features:
+
+* Product table/grid
+* Search
+* Empty state
+* Loading state
+* Error state
+
+Columns:
+
+* Name
+* Price
+* Status
+* Inventory
+* Actions
+
+Actions:
+
+* Edit
+* Delete
+
+---
+
+### ProductFormPage
+
+Route:
+
+/dashboard/products/new
+
+Features:
+
+* Name
+* Description
+* Price
+* Category
+* Inventory Status
+* Image Upload
+* Save
+
+Validation:
+
+React Hook Form + Zod
+
+---
+
+### ProductEditPage
+
+Route:
+
+/dashboard/products/:id/edit
+
+Pre-filled data.
+
+Unsaved change protection.
+
+---
+
+### ServicesPage
+
+Route:
+
+/dashboard/services
+
+Features:
+
+* Service listing
+* Search
+* Loading state
+* Empty state
+* Error state
+
+Actions:
+
+* Edit
+* Delete
+
+---
+
+### ServiceFormPage
+
+Route:
+
+/dashboard/services/new
+
+Fields:
+
+* Name
+* Description
+* Price From
+* Price To
+* Category
+* Image Upload
+* Active Status
+
+Validation required.
+
+---
+
+### ServiceEditPage
+
+Route:
+
+/dashboard/services/:id/edit
+
+Pre-filled data.
+
+Unsaved change protection.
+
+---
+
+# Phase 6 — Shared Components
+
+Create reusable components.
+
+### ProductCard
+
+Displays:
+
+* image
+* name
+* price
+* status
+
+---
+
+### ServiceCard
+
+Displays:
+
+* image
+* name
+* price range
+* status
+
+---
+
+### ProductForm
+
+Shared create/edit form.
+
+---
+
+### ServiceForm
+
+Shared create/edit form.
+
+---
+
+### ProductTable
+
+Reusable dashboard table.
+
+---
+
+### ServiceTable
+
+Reusable dashboard table.
+
+---
+
+# Phase 7 — Dashboard Navigation
+
+Update DashboardLayout.
+
+Add:
+
+* Products
+* Services
+
+Navigation must work on:
+
+* desktop
+* mobile sidebar
+
+Verify active route highlighting.
+
+---
+
+# Phase 8 — Public Profile Integration
+
+Business profile pages must display:
+
+### Products Tab
+
+Live products.
+
+### Services Tab
+
+Live services.
+
+Loading states required.
+
+Empty states required.
+
+Error states required.
+
+Use generated hooks.
+
+No duplicated fetching logic.
+
+---
+
+# Phase 9 — Search Integration Validation
+
+Verify Sprint 5 search automatically discovers:
+
+* products
+* services
+
+If additional indexing or fields are required:
+
+Implement them.
+
+Verify:
+
+GET /search/products
+
+GET /search/services
+
+Return live results.
+
+---
+
+# Phase 10 — Verification
+
+Run all verification checks.
+
+Backend:
+
+* API typecheck
+* API build
+
+Frontend:
+
+* Typecheck
+* Production build
+
+Verify routes:
+
+* /dashboard/products
+* /dashboard/products/new
+* /dashboard/services
+* /dashboard/services/new
+
+Verify:
+
+* create product
+* edit product
+* delete product
+
+Verify:
+
+* create service
+* edit service
+* delete service
+
+Verify ownership enforcement.
+
+Verify generated hooks.
+
+Verify OpenAPI documentation.
+
+---
+
+# Final Deliverable Format
+
+Return:
+
+## Sprint 7 Delivery Report
+
+### Files Created
+
+Table:
+
+* file
+* purpose
+
+### Files Modified
+
+Table:
+
+* file
+* purpose
+
+### APIs Verified
+
+Table:
+
+* endpoint
+* result
+
+### Type Generation Results
+
+Table:
+
+* generated hook
+* status
+
+### Security Verification
+
+Table:
+
+* check
+* result
+
+### Build Verification
+
+Table:
+
+* check
+* result
+
+### Remaining Blockers
+
+Table:
+
+* blocker
+* impact
+* recommended fix
+
+### Sprint 7 Completion %
+
+Only declare complete if:
+
+* typecheck passes
+* build passes
+* routes verified
+* ownership enforced
+* generated hooks verified
+* products and services fully manageable from dashboard
+
+Do not skip verification steps. Audit first, then implement phase by phase.

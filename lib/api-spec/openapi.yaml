@@ -3,20 +3,46 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: HyperLocal Business Engine API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and user management
+  - name: marketplaces
+    description: Marketplace discovery
+  - name: categories
+    description: Category hierarchy
+  - name: locations
+    description: Geographic location hierarchy
+  - name: businesses
+    description: Business profiles
+  - name: inventory
+    description: Products and services offered by businesses
+  - name: portfolio
+    description: Business portfolio showcase
+  - name: reviews
+    description: Customer reviews and ratings
+  - name: engagement
+    description: Saved items and engagement tracking
+  - name: search
+    description: Full-text and filtered business search
+  - name: templates
+    description: Location and category template management
+  - name: claims
+    description: Business claim requests
+  - name: admin
+    description: Admin and operator endpoints
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +50,4297 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ────────────────────────────────────────────────────────────────────
+
+  /v1/auth/register:
+    post:
+      operationId: authRegister
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /v1/auth/login:
+    post:
+      operationId: authLogin
+      tags: [auth]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/auth/logout:
+    post:
+      operationId: authLogout
+      tags: [auth]
+      summary: Invalidate current session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/auth/me:
+    get:
+      operationId: authMe
+      tags: [auth]
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/auth/verify-email:
+    post:
+      operationId: authVerifyEmail
+      tags: [auth]
+      summary: Verify email address with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Marketplaces ─────────────────────────────────────────────────────────────
+
+  /v1/marketplaces/{slug}:
+    get:
+      operationId: getMarketplace
+      tags: [marketplaces]
+      summary: Get marketplace by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marketplace details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Categories ───────────────────────────────────────────────────────────────
+
+  /v1/categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List root or child categories
+      parameters:
+        - name: parent
+          in: query
+          schema:
+            type: string
+          description: Parent category slug; omit for root categories
+      responses:
+        "200":
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CategorySummary"
+
+  /v1/categories/{slug}:
+    get:
+      operationId: getCategory
+      tags: [categories]
+      summary: Get a category with its children
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Category with children
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CategoryDetail"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Locations ────────────────────────────────────────────────────────────────
+
+  /v1/locations:
+    get:
+      operationId: listLocations
+      tags: [locations]
+      summary: List locations for a country (optionally filtered by parent or level)
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ISO country code (e.g. NG)
+        - name: parent
+          in: query
+          schema:
+            type: string
+          description: Parent location slug to get children
+        - name: level
+          in: query
+          schema:
+            type: integer
+          description: Level number (1=state, 2=LGA, 3=town)
+      responses:
+        "200":
+          description: Location list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LocationListResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/locations/{slug}:
+    get:
+      operationId: getLocation
+      tags: [locations]
+      summary: Get a location with its children
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: ISO country code to disambiguate
+      responses:
+        "200":
+          description: Location detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LocationDetail"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Businesses ───────────────────────────────────────────────────────────────
+
+  /v1/businesses:
+    get:
+      operationId: listBusinesses
+      tags: [businesses]
+      summary: List active businesses in a marketplace
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Marketplace slug (or use X-Marketplace-Slug header)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Opaque pagination cursor
+      responses:
+        "200":
+          description: Paginated business list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedBusinessList"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Create a new business profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBusinessRequest"
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BusinessSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/businesses/mine:
+    get:
+      operationId: listMyBusinesses
+      tags: [businesses]
+      summary: List businesses owned by the authenticated user in this marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Marketplace slug
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Opaque pagination cursor
+      responses:
+        "200":
+          description: Paginated list of businesses owned by the current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedBusinessList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/businesses/{slug}:
+    get:
+      operationId: getBusiness
+      tags: [businesses]
+      summary: Get a business profile by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Business detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BusinessDetail"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/businesses/{id}:
+    patch:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update a business profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessRequest"
+      responses:
+        "200":
+          description: Updated business
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BusinessSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    delete:
+      operationId: deleteBusiness
+      tags: [businesses]
+      summary: Soft-delete a business (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Business deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Location Search ───────────────────────────────────────────────────────────
+
+  /v1/locations/search:
+    get:
+      operationId: searchLocations
+      tags: [locations]
+      summary: Trigram + prefix fuzzy search across locations
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query (min 1 character)
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: ISO country code filter (e.g. NG)
+        - name: level
+          in: query
+          schema:
+            type: integer
+          description: Location level number filter
+        - name: parent
+          in: query
+          schema:
+            type: string
+          description: Parent location slug filter
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching locations with similarity score
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        fullName:
+                          type: string
+                          nullable: true
+                        levelNumber:
+                          type: integer
+                        parentId:
+                          type: string
+                          nullable: true
+                        country:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            isoCode:
+                              type: string
+                        score:
+                          type: string
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  # ── Marketplace Config ────────────────────────────────────────────────────────
+
+  /v1/marketplaces/{slug}/location-config:
+    get:
+      operationId: getMarketplaceLocationConfig
+      tags: [marketplaces]
+      summary: Get location template configuration for a marketplace
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marketplace location configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+
+  /v1/marketplaces/{slug}/category-config:
+    get:
+      operationId: getMarketplaceCategoryConfig
+      tags: [marketplaces]
+      summary: Get category template configuration for a marketplace
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marketplace category configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+
+  # ── Business Hours ────────────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/hours:
+    get:
+      operationId: getBusinessHours
+      tags: [businesses]
+      summary: Get business opening hours
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Business hours (0=Sun … 6=Sat)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BusinessHour"
+    put:
+      operationId: upsertBusinessHours
+      tags: [businesses]
+      summary: Bulk upsert business hours (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hours]
+              properties:
+                hours:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/BusinessHourInput"
+      responses:
+        "200":
+          description: Updated hours
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BusinessHour"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  # ── Business Contacts ─────────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/contacts:
+    get:
+      operationId: listBusinessContacts
+      tags: [businesses]
+      summary: List contacts for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contact list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BusinessContact"
+    post:
+      operationId: createBusinessContact
+      tags: [businesses]
+      summary: Add a contact to a business (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessContactInput"
+      responses:
+        "201":
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BusinessContact"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /v1/businesses/{businessId}/contacts/{contactId}:
+    patch:
+      operationId: updateBusinessContact
+      tags: [businesses]
+      summary: Update a business contact (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessContactInput"
+      responses:
+        "200":
+          description: Updated contact
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BusinessContact"
+    delete:
+      operationId: deleteBusinessContact
+      tags: [businesses]
+      summary: Delete a business contact (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Contact deleted
+
+  # ── Business Branches ─────────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/branches:
+    get:
+      operationId: listBusinessBranches
+      tags: [businesses]
+      summary: List branches for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Branch list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+    post:
+      operationId: createBusinessBranch
+      tags: [businesses]
+      summary: Add a branch location (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                locationId:
+                  type: string
+                  format: uuid
+                addressLine1:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                isPrimary:
+                  type: boolean
+      responses:
+        "201":
+          description: Branch created
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /v1/businesses/{businessId}/branches/{branchId}:
+    patch:
+      operationId: updateBusinessBranch
+      tags: [businesses]
+      summary: Update a branch location (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                locationId:
+                  type: string
+                  format: uuid
+                addressLine1:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                isPrimary:
+                  type: boolean
+      responses:
+        "200":
+          description: Branch updated
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      operationId: deleteBusinessBranch
+      tags: [businesses]
+      summary: Remove a branch location (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Branch deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Business Service Areas ────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/service-areas:
+    get:
+      operationId: listBusinessServiceAreas
+      tags: [businesses]
+      summary: List service areas for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Service area list with location detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+    post:
+      operationId: addBusinessServiceArea
+      tags: [businesses]
+      summary: Add a service area (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [locationId]
+              properties:
+                locationId:
+                  type: string
+                  format: uuid
+                radiusKm:
+                  type: string
+      responses:
+        "201":
+          description: Service area added
+
+  /v1/businesses/{businessId}/service-areas/{areaId}:
+    delete:
+      operationId: deleteBusinessServiceArea
+      tags: [businesses]
+      summary: Remove a service area (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: areaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Service area removed
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Products ──────────────────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/products:
+    get:
+      operationId: listProducts
+      tags: [inventory]
+      summary: List products for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, draft, archived, all]
+      responses:
+        "200":
+          description: Paginated product list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProductSummary"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: createProduct
+      tags: [inventory]
+      summary: Create a product (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ProductSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/businesses/{businessId}/products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [inventory]
+      summary: Update a product (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ProductSummary"
+    delete:
+      operationId: deleteProduct
+      tags: [inventory]
+      summary: Soft-delete a product (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Product archived
+
+  # ── Services ──────────────────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/services:
+    get:
+      operationId: listServices
+      tags: [inventory]
+      summary: List services for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, draft, archived, all]
+      responses:
+        "200":
+          description: Paginated service list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ServiceSummary"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: createService
+      tags: [inventory]
+      summary: Create a service (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ServiceSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /v1/businesses/{businessId}/services/{id}:
+    patch:
+      operationId: updateService
+      tags: [inventory]
+      summary: Update a service (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ServiceSummary"
+    delete:
+      operationId: deleteService
+      tags: [inventory]
+      summary: Soft-delete a service (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Service archived
+
+  # ── Portfolio ─────────────────────────────────────────────────────────────────
+
+  /v1/businesses/{businessId}/portfolio:
+    get:
+      operationId: listPortfolios
+      tags: [portfolio]
+      summary: List published portfolios for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Portfolio list with items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+    post:
+      operationId: createPortfolio
+      tags: [portfolio]
+      summary: Create a portfolio collection (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                sortOrder:
+                  type: integer
+      responses:
+        "201":
+          description: Portfolio created
+
+  /v1/businesses/{businessId}/portfolio/{id}/items:
+    post:
+      operationId: addPortfolioItem
+      tags: [portfolio]
+      summary: Add an item to a portfolio (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaUrl]
+              properties:
+                mediaUrl:
+                  type: string
+                  format: uri
+                thumbnailUrl:
+                  type: string
+                  format: uri
+                caption:
+                  type: string
+                sortOrder:
+                  type: integer
+      responses:
+        "201":
+          description: Item added
+
+  /v1/businesses/{businessId}/portfolio/{id}:
+    patch:
+      operationId: updatePortfolio
+      tags: [portfolio]
+      summary: Update a portfolio collection (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                sortOrder:
+                  type: integer
+      responses:
+        "200":
+          description: Portfolio updated
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      operationId: deletePortfolio
+      tags: [portfolio]
+      summary: Delete a portfolio collection (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Portfolio deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/businesses/{businessId}/portfolio/{id}/items/{itemId}:
+    delete:
+      operationId: deletePortfolioItem
+      tags: [portfolio]
+      summary: Remove an item from a portfolio (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Item removed
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ── Reviews ───────────────────────────────────────────────────────────────────
+
+  /v1/reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List published reviews for a business
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated review list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReviewSummary"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Submit a review for a business (one per user per business)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewRequest"
+      responses:
+        "201":
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReviewSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /v1/reviews/summary:
+    get:
+      operationId: getReviewSummary
+      tags: [reviews]
+      summary: Get average rating and count for a business
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rating summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      businessId:
+                        type: string
+                      avgRating:
+                        type: number
+                        nullable: true
+                      totalCount:
+                        type: integer
+
+  /v1/reviews/{id}:
+    patch:
+      operationId: updateReview
+      tags: [reviews]
+      summary: Update your own review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                title:
+                  type: string
+                body:
+                  type: string
+      responses:
+        "200":
+          description: Updated review
+    delete:
+      operationId: deleteReview
+      tags: [reviews]
+      summary: Delete your own review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Review deleted
+
+  # ── Saved Items ───────────────────────────────────────────────────────────────
+
+  /v1/saved-items:
+    get:
+      operationId: listSavedItems
+      tags: [engagement]
+      summary: List saved items for the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated saved items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: saveItem
+      tags: [engagement]
+      summary: Save a business, product, or service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityType, entityId]
+              properties:
+                entityType:
+                  type: string
+                  enum: [business, product, service]
+                entityId:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Item saved
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /v1/saved-items/{id}:
+    delete:
+      operationId: removeSavedItem
+      tags: [engagement]
+      summary: Remove a saved item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Item removed
+
+  # ── Engagement Tracking ───────────────────────────────────────────────────────
+
+  /v1/engagement/track:
+    post:
+      operationId: trackEngagementEvent
+      tags: [engagement]
+      summary: Track a user engagement event (fire-and-forget)
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityType, entityId, eventType]
+              properties:
+                entityType:
+                  type: string
+                  enum: [business, product, service, portfolio_item]
+                entityId:
+                  type: string
+                  format: uuid
+                eventType:
+                  type: string
+                  enum: [view, contact_click, whatsapp_click, phone_click, directions_click, website_click, save, share]
+                sessionId:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        "200":
+          description: Event tracked
+
+  # ── Search ────────────────────────────────────────────────────────────────────
+
+  /v1/search/businesses:
+    get:
+      operationId: searchBusinesses
+      tags: [search]
+      summary: Full-text + filter search across businesses in a marketplace
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Text search query
+        - name: categorySlug
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug
+        - name: locationSlug
+          in: query
+          schema:
+            type: string
+          description: Filter by location slug (includes children)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated business search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BusinessSummary"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  # ── Claim Requests ────────────────────────────────────────────────────────────
+
+  /v1/claim-requests:
+    get:
+      operationId: listClaimRequests
+      tags: [claims]
+      summary: List current user's claim requests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated claim requests
+    post:
+      operationId: createClaimRequest
+      tags: [claims]
+      summary: Submit a business claim request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [businessId]
+              properties:
+                businessId:
+                  type: string
+                  format: uuid
+                evidenceUrl:
+                  type: string
+                  format: uri
+      responses:
+        "201":
+          description: Claim request submitted
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  # ── Location Templates ────────────────────────────────────────────────────────
+
+  /v1/templates/locations:
+    get:
+      operationId: listLocationTemplates
+      tags: [templates]
+      summary: List all location templates
+      responses:
+        "200":
+          description: Location template list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LocationTemplateSummary"
+    post:
+      operationId: createLocationTemplate
+      tags: [templates]
+      summary: Create a location template (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationTemplateInput"
+      responses:
+        "201":
+          description: Template created
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /v1/templates/locations/{id}:
+    get:
+      operationId: getLocationTemplate
+      tags: [templates]
+      summary: Get location template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Location template detail
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      operationId: updateLocationTemplate
+      tags: [templates]
+      summary: Update a location template (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationTemplateInput"
+      responses:
+        "200":
+          description: Updated template
+    delete:
+      operationId: deleteLocationTemplate
+      tags: [templates]
+      summary: Soft-delete a location template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Template deleted
+
+  /v1/templates/locations/{id}/clone:
+    post:
+      operationId: cloneLocationTemplate
+      tags: [templates]
+      summary: Clone a location template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, newSlug]
+              properties:
+                name:
+                  type: string
+                newSlug:
+                  type: string
+      responses:
+        "201":
+          description: Cloned template
+
+  /v1/templates/locations/{id}/set-marketplace-default:
+    post:
+      operationId: setLocationTemplateMarketplaceDefault
+      tags: [templates]
+      summary: Set this location template as default for a marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                defaultStartLevel:
+                  type: integer
+                  default: 1
+                hiddenLevels:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Marketplace default set
+
+  # ── Category Templates ────────────────────────────────────────────────────────
+
+  /v1/templates/categories:
+    get:
+      operationId: listCategoryTemplates
+      tags: [templates]
+      summary: List all category templates
+      responses:
+        "200":
+          description: Category template list
+    post:
+      operationId: createCategoryTemplate
+      tags: [templates]
+      summary: Create a category template (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryTemplateInput"
+      responses:
+        "201":
+          description: Category template created
+
+  /v1/templates/categories/{id}:
+    patch:
+      operationId: updateCategoryTemplate
+      tags: [templates]
+      summary: Update a category template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryTemplateInput"
+      responses:
+        "200":
+          description: Updated template
+    delete:
+      operationId: deleteCategoryTemplate
+      tags: [templates]
+      summary: Soft-delete a category template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Template deleted
+
+  /v1/templates/categories/{id}/set-marketplace-default:
+    post:
+      operationId: setCategoryTemplateMarketplaceDefault
+      tags: [templates]
+      summary: Set this category template as default for a marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hideRoot:
+                  type: boolean
+                  default: true
+                startDepth:
+                  type: integer
+                  default: 1
+      responses:
+        "200":
+          description: Marketplace category default set
+
+  # ── Admin ─────────────────────────────────────────────────────────────────────
+
+  /v1/admin/businesses:
+    get:
+      operationId: adminListBusinesses
+      tags: [admin]
+      summary: Admin list of all businesses in a marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated business list
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/admin/businesses/{id}/status:
+    patch:
+      operationId: adminUpdateBusinessStatus
+      tags: [admin]
+      summary: Update business status (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [draft, active, suspended, archived]
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Business status updated
+
+  /v1/admin/claim-requests:
+    get:
+      operationId: adminListClaimRequests
+      tags: [admin]
+      summary: Admin list of claim requests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Claim requests list with business + user detail
+
+  /v1/admin/claim-requests/{id}:
+    patch:
+      operationId: adminResolveClaim
+      tags: [admin]
+      summary: Approve or reject a claim request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected]
+                adminNote:
+                  type: string
+      responses:
+        "200":
+          description: Claim request resolved
+
+  /v1/admin/reviews/{id}/moderation:
+    patch:
+      operationId: adminModerateReview
+      tags: [admin]
+      summary: Moderate a review (flag or remove)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [moderationStatus]
+              properties:
+                moderationStatus:
+                  type: string
+                  enum: [auto_approved, flagged, removed]
+                moderationNote:
+                  type: string
+      responses:
+        "200":
+          description: Review moderation status updated
+
+  /v1/admin/analytics/summary:
+    get:
+      operationId: adminAnalyticsSummary
+      tags: [admin]
+      summary: Get analytics summary for a marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marketplace analytics summary
+
+  /v1/admin/analytics/search:
+    get:
+      operationId: adminAnalyticsSearch
+      tags: [admin]
+      summary: Get search analytics (top queries, zero-results) for a marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Search analytics data
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /v1/readyz:
+    get:
+      operationId: readyz
+      tags: [health]
+      summary: Readiness probe — checks DB connectivity
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  db:
+                    type: string
+        "503":
+          description: Service is not ready
+
+  /v1/search/suggestions:
+    get:
+      operationId: searchSuggestions
+      tags: [search]
+      summary: Autocomplete suggestions for businesses, categories, and locations
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Suggestions grouped by type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  businesses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        type:
+                          type: string
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        type:
+                          type: string
+                  locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        fullName:
+                          type: string
+                        type:
+                          type: string
+
+  /v1/search/products:
+    get:
+      operationId: searchProducts
+      tags: [search]
+      summary: Search products across businesses
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: businessId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated product search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        description:
+                          type: string
+                          nullable: true
+                        price:
+                          type: string
+                          nullable: true
+                        stockStatus:
+                          type: string
+                        businessId:
+                          type: string
+                          format: uuid
+                        businessName:
+                          type: string
+                        businessSlug:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  /v1/search/services:
+    get:
+      operationId: searchServices
+      tags: [search]
+      summary: Search services across businesses
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: businessId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated service search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        description:
+                          type: string
+                          nullable: true
+                        priceFrom:
+                          type: string
+                          nullable: true
+                        priceTo:
+                          type: string
+                          nullable: true
+                        businessId:
+                          type: string
+                          format: uuid
+                        businessName:
+                          type: string
+                        businessSlug:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  /v1/search/updates:
+    get:
+      operationId: searchUpdates
+      tags: [search]
+      summary: Search published business updates (news, offers, events, announcements)
+      parameters:
+        - name: q
+          in: query
+          description: Full-text search query for update titles
+          schema:
+            type: string
+        - name: businessId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Filter by update type
+          schema:
+            type: string
+            enum: [news, offer, event, announcement]
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated list of business updates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        businessId:
+                          type: string
+                          format: uuid
+                        type:
+                          type: string
+                          enum: [news, offer, event, announcement]
+                        title:
+                          type: string
+                        body:
+                          type: string
+                        businessName:
+                          type: string
+                        businessSlug:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                  nextCursor:
+                    type: string
+                    nullable: true
+                  total:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /v1/businesses/{businessId}/media:
+    get:
+      operationId: listBusinessMedia
+      tags: [media]
+      summary: List all active media for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: purpose
+          in: query
+          schema:
+            type: string
+            enum: [logo, banner, gallery, document, avatar]
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of media items
+    post:
+      operationId: attachBusinessMedia
+      tags: [media]
+      summary: Attach a pre-uploaded media item to a business
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [storageKey, fileName, mimeType]
+              properties:
+                storageKey:
+                  type: string
+                fileName:
+                  type: string
+                mimeType:
+                  type: string
+                fileSizeBytes:
+                  type: integer
+                width:
+                  type: integer
+                height:
+                  type: integer
+                purpose:
+                  type: string
+                  enum: [logo, banner, gallery, document, avatar]
+                  default: gallery
+                isPrimary:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: Media attached
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /v1/businesses/{businessId}/media/presign:
+    post:
+      operationId: presignBusinessMediaUpload
+      tags: [media]
+      summary: Get a presigned URL for client-side media upload
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, mimeType]
+              properties:
+                fileName:
+                  type: string
+                mimeType:
+                  type: string
+                purpose:
+                  type: string
+                  enum: [logo, banner, gallery, document, avatar]
+                  default: gallery
+      responses:
+        "200":
+          description: Presigned upload URL and storage key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                  storageKey:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+  /v1/businesses/{businessId}/media/{mediaId}:
+    delete:
+      operationId: deleteBusinessMedia
+      tags: [media]
+      summary: Soft-delete a media item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Media deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/businesses/{businessId}/verifications:
+    get:
+      operationId: listBusinessVerifications
+      tags: [verification]
+      summary: List verification records for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of verification records
+    post:
+      operationId: initiateBusinessVerification
+      tags: [verification]
+      summary: Admin — initiate a verification check for a business
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verificationTypeId]
+              properties:
+                verificationTypeId:
+                  type: string
+                  format: uuid
+                evidenceUrl:
+                  type: string
+                  format: uri
+                notes:
+                  type: string
+      responses:
+        "201":
+          description: Verification record created
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /v1/businesses/{businessId}/verifications/types:
+    get:
+      operationId: getVerificationTypes
+      tags: [verification]
+      summary: List available verification types for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of verification types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        code:
+                          type: string
+                        label:
+                          type: string
+                        description:
+                          type: string
+                        scoreWeight:
+                          type: number
+                        isRequired:
+                          type: boolean
+
+  /v1/businesses/{businessId}/verifications/{recordId}:
+    patch:
+      operationId: updateBusinessVerification
+      tags: [verification]
+      summary: Admin — approve or reject a verification record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [verified, failed, pending]
+                notes:
+                  type: string
+                expiresAt:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Verification record updated
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/businesses/{businessId}/updates:
+    get:
+      operationId: listBusinessUpdates
+      tags: [business-updates]
+      summary: List published updates for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated list of business updates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BusinessUpdateItem"
+    post:
+      operationId: createBusinessUpdate
+      tags: [business-updates]
+      summary: Owner — create a business update
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, body]
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                body:
+                  type: string
+                  maxLength: 5000
+                updateType:
+                  type: string
+                  enum: [news, offer, event, announcement]
+                  default: announcement
+                publishNow:
+                  type: boolean
+                  default: true
+                expiresAt:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Update created
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /v1/businesses/{businessId}/updates/{updateId}:
+    patch:
+      operationId: patchBusinessUpdate
+      tags: [business-updates]
+      summary: Owner — edit a business update
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: updateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                body:
+                  type: string
+                updateType:
+                  type: string
+                  enum: [news, offer, event, announcement]
+                status:
+                  type: string
+                  enum: [draft, published, archived]
+      responses:
+        "200":
+          description: Update patched
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      operationId: deleteBusinessUpdate
+      tags: [business-updates]
+      summary: Owner — soft-delete a business update
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: updateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Update deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List the authenticated user's notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unread
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated list of notifications
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/notifications/unread-count:
+    get:
+      operationId: unreadNotificationCount
+      tags: [notifications]
+      summary: Get count of unread notifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all unread notifications as read
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All notifications marked as read
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /v1/notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a single notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Notification marked as read
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /v1/notifications/{id}:
+    delete:
+      operationId: deleteNotification
+      tags: [notifications]
+      summary: Delete a notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Notification deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    ConflictError:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+
   schemas:
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
+
+    MessageResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        phone:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthUser:
+      type: object
+      required: [id, email, displayName, status, emailVerified]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        status:
+          type: string
+        emailVerified:
+          type: boolean
+
+    AuthResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user, accessToken, expiresAt]
+          properties:
+            user:
+              $ref: "#/components/schemas/AuthUser"
+            accessToken:
+              type: string
+            expiresAt:
+              type: string
+              format: date-time
+
+    UserProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, email, displayName, status, emailVerified]
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+            displayName:
+              type: string
+            phone:
+              type: string
+              nullable: true
+            avatarUrl:
+              type: string
+              nullable: true
+            status:
+              type: string
+            locale:
+              type: string
+              nullable: true
+            emailVerified:
+              type: boolean
+            createdAt:
+              type: string
+              format: date-time
+
+    CategorySummary:
+      type: object
+      required: [id, name, slug, depth, sortOrder]
+      properties:
+        id:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        iconUrl:
+          type: string
+          nullable: true
+        depth:
+          type: integer
+        sortOrder:
+          type: integer
+
+    CategoryDetail:
+      allOf:
+        - $ref: "#/components/schemas/CategorySummary"
+        - type: object
+          properties:
+            children:
+              type: array
+              items:
+                $ref: "#/components/schemas/CategorySummary"
+
+    LocationSummary:
+      type: object
+      required: [id, name, slug, levelNumber]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        fullName:
+          type: string
+          nullable: true
+        levelNumber:
+          type: integer
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+
+    LocationDetail:
+      allOf:
+        - $ref: "#/components/schemas/LocationSummary"
+        - type: object
+          properties:
+            latitude:
+              type: number
+              nullable: true
+            longitude:
+              type: number
+              nullable: true
+            countryId:
+              type: string
+              format: uuid
+            children:
+              type: array
+              items:
+                $ref: "#/components/schemas/LocationSummary"
+
+    LocationListResponse:
+      type: object
+      required: [country, locations]
+      properties:
+        country:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocationSummary"
+
+    MarketplaceResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, slug, name, status]
+          properties:
+            id:
+              type: string
+              format: uuid
+            slug:
+              type: string
+            name:
+              type: string
+            tagline:
+              type: string
+              nullable: true
+            description:
+              type: string
+              nullable: true
+            status:
+              type: string
+            domain:
+              type: string
+              nullable: true
+            logoUrl:
+              type: string
+              nullable: true
+            primaryColor:
+              type: string
+              nullable: true
+            country:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                isoCode:
+                  type: string
+                phoneCode:
+                  type: string
+            currency:
+              type: object
+              properties:
+                id:
+                  type: string
+                code:
+                  type: string
+                name:
+                  type: string
+                symbol:
+                  type: string
+
+    BusinessSummary:
+      type: object
+      required: [id, name, slug, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        tagline:
+          type: string
+          nullable: true
+        status:
+          type: string
+        claimStatus:
+          type: string
+          nullable: true
+        verificationScore:
+          type: number
+          nullable: true
+        whatsappNumber:
+          type: string
+          nullable: true
+        primaryPhone:
+          type: string
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        addressLine1:
+          type: string
+          nullable: true
+        location:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            fullName:
+              type: string
+              nullable: true
+
+    BusinessDetail:
+      allOf:
+        - $ref: "#/components/schemas/BusinessSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+              nullable: true
+            addressLine1:
+              type: string
+              nullable: true
+            addressLine2:
+              type: string
+              nullable: true
+            latitude:
+              type: number
+              nullable: true
+            longitude:
+              type: number
+              nullable: true
+            primaryEmail:
+              type: string
+              nullable: true
+            websiteUrl:
+              type: string
+              nullable: true
+            updatedAt:
+              type: string
+              format: date-time
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  isPrimary:
+                    type: boolean
+            contacts:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  contactType:
+                    type: string
+                  value:
+                    type: string
+                  isPrimary:
+                    type: boolean
+                  isVerified:
+                    type: boolean
+
+    CreateBusinessRequest:
+      type: object
+      required: [name, categoryIds]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        tagline:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        locationId:
+          type: string
+          format: uuid
+        addressLine1:
+          type: string
+          maxLength: 200
+        addressLine2:
+          type: string
+          maxLength: 200
+        whatsappNumber:
+          type: string
+          maxLength: 20
+        primaryPhone:
+          type: string
+          maxLength: 20
+        primaryEmail:
+          type: string
+          format: email
+        websiteUrl:
+          type: string
+          format: uri
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    UpdateBusinessRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        tagline:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        locationId:
+          type: string
+          format: uuid
+        addressLine1:
+          type: string
+          maxLength: 200
+        addressLine2:
+          type: string
+          maxLength: 200
+        whatsappNumber:
+          type: string
+          maxLength: 20
+        primaryPhone:
+          type: string
+          maxLength: 20
+        primaryEmail:
+          type: string
+          format: email
+        websiteUrl:
+          type: string
+          format: uri
+
+    PaginationMeta:
+      type: object
+      required: [nextCursor, hasMore, count]
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+        count:
+          type: integer
+
+    PaginatedBusinessList:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessSummary"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    BusinessHour:
+      type: object
+      required: [id, businessId, dayOfWeek, isClosed]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+        opensAt:
+          type: string
+          nullable: true
+          example: "09:00"
+        closesAt:
+          type: string
+          nullable: true
+          example: "18:00"
+        isClosed:
+          type: boolean
+
+    BusinessHourInput:
+      type: object
+      required: [dayOfWeek, isClosed]
+      properties:
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+        opensAt:
+          type: string
+          nullable: true
+          example: "09:00"
+        closesAt:
+          type: string
+          nullable: true
+          example: "18:00"
+        isClosed:
+          type: boolean
+
+    BusinessContact:
+      type: object
+      required: [id, businessId, contactType, value]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        contactType:
+          type: string
+        value:
+          type: string
+        isPrimary:
+          type: boolean
+        isVerified:
+          type: boolean
+        displayOrder:
+          type: integer
+
+    BusinessContactInput:
+      type: object
+      required: [contactType, value]
+      properties:
+        contactType:
+          type: string
+          enum: [phone, whatsapp, email, website, instagram, facebook, twitter, tiktok, youtube, other]
+        value:
+          type: string
+        isPrimary:
+          type: boolean
+        displayOrder:
+          type: integer
+
+    ProductSummary:
+      type: object
+      required: [id, businessId, name, slug, stockStatus, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        stockStatus:
+          type: string
+          enum: [in_stock, out_of_stock, made_to_order]
+        status:
+          type: string
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: string
+        currencyId:
+          type: string
+          format: uuid
+        unit:
+          type: string
+        stockStatus:
+          type: string
+          enum: [in_stock, out_of_stock, made_to_order]
+        status:
+          type: string
+          enum: [active, draft]
+        categoryId:
+          type: string
+          format: uuid
+        sortOrder:
+          type: integer
+
+    ServiceSummary:
+      type: object
+      required: [id, businessId, name, slug, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        priceFrom:
+          type: string
+          nullable: true
+        priceTo:
+          type: string
+          nullable: true
+        durationMinutes:
+          type: integer
+          nullable: true
+        availability:
+          type: string
+          nullable: true
+        status:
+          type: string
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ServiceInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        priceFrom:
+          type: string
+        priceTo:
+          type: string
+        currencyId:
+          type: string
+          format: uuid
+        durationMinutes:
+          type: integer
+        availability:
+          type: string
+        status:
+          type: string
+          enum: [active, draft]
+        categoryId:
+          type: string
+          format: uuid
+        sortOrder:
+          type: integer
+
+    ReviewSummary:
+      type: object
+      required: [id, businessId, rating, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        reviewerId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        isAnonymous:
+          type: boolean
+        status:
+          type: string
+        moderationStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateReviewRequest:
+      type: object
+      required: [businessId, rating]
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+        body:
+          type: string
+        isAnonymous:
+          type: boolean
+
+    LocationTemplateSummary:
+      type: object
+      required: [id, name, slug, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        country:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            isoCode:
+              type: string
+
+    LocationTemplateInput:
+      type: object
+      required: [name, slug, countryId]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        countryId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        isActive:
+          type: boolean
+
+    CategoryTemplateInput:
+      type: object
+      required: [name, slug, rootCategoryId]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        rootCategoryId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        isActive:
+          type: boolean
+        displayConfig:
+          type: object
+
+    BusinessUpdateItem:
+      type: object
+      required: [id, businessId, title, body, updateType, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        body:
+          type: string
+        updateType:
+          type: string
+          enum: [news, offer, event, announcement]
+        status:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 

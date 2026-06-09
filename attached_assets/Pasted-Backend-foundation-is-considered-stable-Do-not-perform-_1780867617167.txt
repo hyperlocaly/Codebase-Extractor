@@ -1,0 +1,143 @@
+Backend foundation is considered stable.
+
+Do not perform another audit.
+
+Objective:
+Prepare the system for frontend implementation.
+
+Tasks:
+
+1. Generate a Frontend Build Plan
+
+Analyze all existing API routes, schemas, permissions, and workflows.
+
+Create:
+
+- Screen inventory
+- Navigation structure
+- User journeys
+- Required forms
+- Required tables
+- Required dashboards
+- Required admin pages
+
+Group by:
+
+Consumer
+Business Owner
+Marketplace Admin
+Super Admin
+
+2. Create Frontend Architecture
+
+Using the existing stack:
+
+- React
+- TypeScript
+- Vite
+- React Query
+- React Router
+- Tailwind
+- Shadcn UI
+
+Design:
+
+src/
+  pages/
+  components/
+  features/
+  hooks/
+  services/
+  layouts/
+  routes/
+  types/
+
+3. Build Feature Priority Matrix
+
+Classify all frontend work into:
+
+Phase A (MVP Critical)
+- Authentication
+- Marketplace selection
+- Business onboarding
+- Business profile management
+- Products
+- Services
+- Search
+- Business directory
+
+Phase B
+- Portfolio
+- Reviews
+- Verification
+- Saved items
+- Notifications
+
+Phase C
+- Analytics
+- Advanced moderation
+- Admin operations
+
+4. Generate Screen-by-Screen Specification
+
+For every screen provide:
+
+- Purpose
+- Route
+- API endpoints used
+- Permissions required
+- Components required
+- Loading states
+- Error states
+- Empty states
+
+5. Generate Frontend Build Order
+
+Produce the exact implementation sequence.
+
+Example:
+
+Sprint 1
+- App shell
+- Auth
+- Routing
+- API client
+
+Sprint 2
+- Marketplace context
+- User profile
+
+Sprint 3
+- Business onboarding
+
+Sprint 4
+- Business management
+
+Sprint 5
+- Products and services
+
+Sprint 6
+- Search
+
+Sprint 7
+- Reviews and verification
+
+Sprint 8
+- Analytics and admin
+
+6. Create Missing API List
+
+Before frontend begins:
+
+List any backend functionality still missing that would block UI development.
+
+Only list real blockers.
+
+7. Produce final output:
+
+FRONTEND READY ITEMS
+BACKEND GAPS
+SCREEN INVENTORY
+SPRINT PLAN
+COMPONENT INVENTORY
+ROUTE MAP

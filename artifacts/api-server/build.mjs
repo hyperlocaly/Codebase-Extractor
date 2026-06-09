@@ -100,6 +100,8 @@ async function buildAll() {
       "puppeteer",
       "puppeteer-core",
       "electron",
+      "prom-client",
+      "@opentelemetry/api",
     ],
     sourcemap: "linked",
     plugins: [

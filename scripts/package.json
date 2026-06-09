@@ -5,7 +5,21 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "seed:currencies": "tsx ./src/seeds/currencies.ts",
+    "seed:countries": "tsx ./src/seeds/countries.ts",
+    "seed:categories-fashion": "tsx ./src/seeds/categories-fashion.ts",
+    "seed:fashion-nigeria": "tsx ./src/seeds/fashion-nigeria.ts",
+    "seed:roles-permissions": "tsx ./src/seeds/roles-permissions.ts",
+    "seed:event-types": "tsx ./src/seeds/event-types.ts",
+    "seed:location-nigeria": "tsx ./src/seeds/location-nigeria.ts",
+    "seed:templates": "tsx ./src/seeds/templates.ts",
+    "seed:all": "tsx ./src/seeds/run-all.ts"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "@workspace/domain-constants": "workspace:*",
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
