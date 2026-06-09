@@ -1,0 +1,2 @@
+- [Sprint 7 gaps closed](sprint7-gaps.md) — imageUrl on products/services, status persistence fix, shared assertBusinessOwner, dashboard search/filter, error states in ProfilePage.
+- [useListCategories params](list-categories-params.md) — ListCategoriesParams has only `parent?: string`, no marketplace field; hook can be called with no args.

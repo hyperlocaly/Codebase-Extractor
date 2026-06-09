@@ -1,0 +1,402 @@
+SPRINT 7 CLOSURE SPRINT
+
+IMPORTANT
+
+This is NOT Sprint 8.
+
+Do NOT add new marketplace features.
+
+Do NOT expand scope.
+
+Your job is to close every gap identified by the Sprint 7 Audit.
+
+Follow the same process:
+
+1. Audit
+2. Validate
+3. Implement
+4. Typecheck
+5. Build
+6. Verify
+
+Never skip verification.
+
+---
+
+OBJECTIVE
+
+Bring Sprint 7 from approximately 85–90% complete to 100% complete.
+
+Only address audited gaps.
+
+Do not introduce unrelated functionality.
+
+---
+
+PHASE 1 — VALIDATE AUDIT FINDINGS
+
+Before modifying anything:
+
+Verify each audit finding.
+
+Confirm whether it is:
+
+* Valid
+* Already fixed
+* False positive
+
+Produce a validation report.
+
+Then proceed.
+
+---
+
+PHASE 2 — PRODUCT STATUS PERSISTENCE
+
+Audit Finding:
+
+Frontend allows:
+
+* Active
+* Draft
+
+Backend ignores status and always saves active.
+
+Required Fix:
+
+Backend ProductSchema must support:
+
+status:
+
+* active
+* draft
+* archived
+
+Verify:
+
+POST product persists status.
+
+PATCH product updates status.
+
+GET product returns status.
+
+Dashboard list displays correct status.
+
+Public listings must continue showing active products only.
+
+Verify end-to-end.
+
+---
+
+PHASE 3 — SERVICE STATUS PERSISTENCE
+
+Audit Finding:
+
+Frontend allows status changes.
+
+Backend ignores them.
+
+Required Fix:
+
+Backend ServiceSchema must support:
+
+status:
+
+* active
+* draft
+* archived
+
+Verify:
+
+POST service persists status.
+
+PATCH service updates status.
+
+GET service returns status.
+
+Dashboard displays actual status.
+
+Public listings remain active-only.
+
+Verify end-to-end.
+
+---
+
+PHASE 4 — PRODUCT IMAGE SUPPORT
+
+Audit Finding:
+
+No image upload exists.
+
+Required Fix:
+
+Use existing media infrastructure.
+
+Audit first:
+
+* media routes
+* upload hooks
+* presigned upload flow
+* business media attachments
+
+Implement:
+
+Product image upload.
+
+Requirements:
+
+* upload image
+* preview image
+* replace image
+* persist image URL
+
+Integrate into:
+
+* create product
+* edit product
+
+Verify:
+
+upload works
+
+image displays in ProductCard
+
+image displays on public profile
+
+image persists after refresh
+
+---
+
+PHASE 5 — SERVICE IMAGE SUPPORT
+
+Audit Finding:
+
+No image upload exists.
+
+Implement same workflow as products.
+
+Requirements:
+
+* upload image
+* preview image
+* replace image
+* persist image URL
+
+Integrate into:
+
+* create service
+* edit service
+
+Verify:
+
+image upload works
+
+image displays correctly
+
+persists after refresh
+
+---
+
+PHASE 6 — CATEGORY ASSIGNMENT
+
+Audit Finding:
+
+Backend supports categoryId.
+
+Frontend does not expose it.
+
+Required Fix:
+
+Products:
+
+* category selector
+
+Services:
+
+* category selector
+
+Use generated category APIs.
+
+Requirements:
+
+* searchable selector
+* prefilled on edit
+* validation
+* persists correctly
+
+Verify:
+
+category saved
+
+category loaded
+
+category updated
+
+search integration unaffected
+
+---
+
+PHASE 7 — ERROR STATE HARDENING
+
+Audit Finding:
+
+Products and Services tabs silently fail.
+
+Required Fix:
+
+Public profile tabs must support:
+
+* loading state
+* empty state
+* error state
+
+Products tab:
+
+show retry action on failure.
+
+Services tab:
+
+show retry action on failure.
+
+Verify:
+
+network failure produces visible error state.
+
+No silent failures.
+
+---
+
+PHASE 8 — SHARED OWNERSHIP MIDDLEWARE
+
+Audit Finding:
+
+assertOwner duplicated.
+
+Required Fix:
+
+Create shared reusable middleware:
+
+requireBusinessOwner
+
+Use everywhere:
+
+* products
+* services
+
+Remove duplicated logic.
+
+Verify behavior unchanged.
+
+Verify security unchanged.
+
+---
+
+PHASE 9 — DASHBOARD SEARCH & FILTER
+
+Audit Finding:
+
+Dashboard products/services pages have no search.
+
+Implement:
+
+Products:
+
+* search input
+* status filter
+
+Services:
+
+* search input
+* status filter
+
+Requirements:
+
+client-side acceptable if dataset small.
+
+server-side preferred if already supported.
+
+Verify:
+
+search works.
+
+status filtering works.
+
+---
+
+PHASE 10 — FINAL AUDIT
+
+Re-run the original Sprint 7 Audit.
+
+Verify:
+
+Product status persistence
+Service status persistence
+Product images
+Service images
+Category assignment
+Error states
+Ownership middleware
+Dashboard search/filter
+
+Produce a comparison:
+
+Before Closure Sprint
+After Closure Sprint
+
+---
+
+FINAL REPORT FORMAT
+
+# Sprint 7 Closure Report
+
+## Audit Findings Resolved
+
+(table)
+
+## Files Created
+
+(table)
+
+## Files Modified
+
+(table)
+
+## APIs Verified
+
+(table)
+
+## Upload Verification
+
+(table)
+
+## Security Verification
+
+(table)
+
+## Build Verification
+
+(table)
+
+## Remaining Gaps
+
+(table)
+
+## Updated Sprint 7 Completion %
+
+Only claim 100% if:
+
+* status persistence works
+* image upload works
+* category assignment works
+* error states work
+* ownership middleware consolidated
+* dashboard search/filter works
+* all typechecks pass
+* all builds pass
+* verification completed
+
+Do not skip validation.
+
+Do not skip verification.
+
+Close Sprint 7 completely before beginning Sprint 8.

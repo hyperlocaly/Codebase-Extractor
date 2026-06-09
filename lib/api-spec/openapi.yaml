@@ -4091,9 +4091,16 @@ components:
         unit:
           type: string
           nullable: true
+        imageUrl:
+          type: string
+          nullable: true
         stockStatus:
           type: string
           enum: [in_stock, out_of_stock, made_to_order]
+        categoryId:
+          type: string
+          format: uuid
+          nullable: true
         status:
           type: string
         sortOrder:
@@ -4117,12 +4124,14 @@ components:
           format: uuid
         unit:
           type: string
+        imageUrl:
+          type: string
         stockStatus:
           type: string
           enum: [in_stock, out_of_stock, made_to_order]
         status:
           type: string
-          enum: [active, draft]
+          enum: [active, draft, archived]
         categoryId:
           type: string
           format: uuid
@@ -4152,11 +4161,18 @@ components:
         priceTo:
           type: string
           nullable: true
+        imageUrl:
+          type: string
+          nullable: true
         durationMinutes:
           type: integer
           nullable: true
         availability:
           type: string
+          nullable: true
+        categoryId:
+          type: string
+          format: uuid
           nullable: true
         status:
           type: string
@@ -4181,13 +4197,15 @@ components:
         currencyId:
           type: string
           format: uuid
+        imageUrl:
+          type: string
         durationMinutes:
           type: integer
         availability:
           type: string
         status:
           type: string
-          enum: [active, draft]
+          enum: [active, draft, archived]
         categoryId:
           type: string
           format: uuid

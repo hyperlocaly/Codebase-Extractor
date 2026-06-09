@@ -2,11 +2,12 @@ import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { mediaTable, businessesTable, businessOwnersTable } from "@workspace/db";
+import { mediaTable } from "@workspace/db";
 import { requireAuth } from "../../middleware/auth";
 import { requireMarketplace } from "../../middleware/marketplace-context";
 import { sendSuccess, sendCreated, sendNoContent } from "../../shared/response";
-import { NotFoundError, ValidationError, ForbiddenError } from "../../shared/errors";
+import { NotFoundError, ValidationError } from "../../shared/errors";
+import { assertBusinessOwner } from "../../shared/business-owner";
 import { publishEvent } from "../../infrastructure/outbox/publisher";
 
 const router: IRouter = Router({ mergeParams: true });
@@ -33,25 +34,6 @@ const AttachMediaSchema = z.object({
   isPrimary: z.boolean().default(false),
 });
 
-async function assertBusinessOwner(businessId: string, userId: string, marketplaceId: string) {
-  const [biz] = await db
-    .select({ id: businessesTable.id })
-    .from(businessesTable)
-    .where(and(eq(businessesTable.id, businessId), eq(businessesTable.marketplaceId, marketplaceId)));
-  if (!biz) throw new NotFoundError("Business", businessId);
-
-  const [owner] = await db
-    .select({ id: businessOwnersTable.id })
-    .from(businessOwnersTable)
-    .where(
-      and(
-        eq(businessOwnersTable.businessId, businessId),
-        eq(businessOwnersTable.userId, userId),
-        eq(businessOwnersTable.isActive, true),
-      ),
-    );
-  if (!owner) throw new ForbiddenError("Not an owner of this business");
-}
 
 // GET /api/v1/businesses/:businessId/media
 router.get("/", requireMarketplace, async (req, res, next): Promise<void> => {

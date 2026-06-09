@@ -121,12 +121,22 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
     marketplace: MARKETPLACE_SLUG,
   });
 
-  const { data: productsData, isLoading: productsLoading } = useListProducts(
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    isError: productsError,
+    refetch: refetchProducts,
+  } = useListProducts(
     business.id,
     { marketplace: MARKETPLACE_SLUG, limit: 20 },
   );
 
-  const { data: servicesData, isLoading: servicesLoading } = useListServices(
+  const {
+    data: servicesData,
+    isLoading: servicesLoading,
+    isError: servicesError,
+    refetch: refetchServices,
+  } = useListServices(
     business.id,
     { marketplace: MARKETPLACE_SLUG, limit: 20 },
   );
@@ -172,8 +182,12 @@ function BusinessProfileContent({ business }: { business: BusinessDetail }) {
         contacts={contacts}
         products={products}
         productsLoading={productsLoading}
+        productsError={productsError}
+        onRetryProducts={refetchProducts}
         services={services}
         servicesLoading={servicesLoading}
+        servicesError={servicesError}
+        onRetryServices={refetchServices}
         portfolios={portfolios}
         portfoliosLoading={portfoliosLoading}
         reviews={reviews}

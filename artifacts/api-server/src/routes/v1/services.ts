@@ -2,13 +2,14 @@ import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { servicesTable, businessesTable, businessOwnersTable } from "@workspace/db";
+import { servicesTable } from "@workspace/db";
 import { requireAuth } from "../../middleware/auth";
 import { requireMarketplace } from "../../middleware/marketplace-context";
 import { sendSuccess, sendCreated, sendNoContent, sendPaginated } from "../../shared/response";
 import { parsePagination, buildNextCursor } from "../../shared/pagination";
 import { generateUniqueSlug } from "../../shared/slug";
-import { NotFoundError, ValidationError, ForbiddenError } from "../../shared/errors";
+import { NotFoundError, ValidationError } from "../../shared/errors";
+import { assertBusinessOwner } from "../../shared/business-owner";
 import { publishEvent } from "../../infrastructure/outbox/publisher";
 
 const router: IRouter = Router({ mergeParams: true });
@@ -19,24 +20,13 @@ const ServiceSchema = z.object({
   priceFrom: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
   priceTo: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
   currencyId: z.string().uuid().optional(),
+  imageUrl: z.string().max(2000).optional(),
   durationMinutes: z.number().int().min(1).optional(),
   availability: z.string().max(200).optional(),
+  status: z.enum(["active", "draft", "archived"]).default("draft"),
   categoryId: z.string().uuid().optional(),
   sortOrder: z.number().int().min(0).default(0),
 });
-
-async function assertOwner(businessId: string, userId: string, marketplaceId: string) {
-  const [biz] = await db
-    .select({ id: businessesTable.id })
-    .from(businessesTable)
-    .where(and(eq(businessesTable.id, businessId), eq(businessesTable.marketplaceId, marketplaceId), isNull(businessesTable.deletedAt)));
-  if (!biz) throw new NotFoundError("Business", businessId);
-  const [owner] = await db
-    .select({ id: businessOwnersTable.id })
-    .from(businessOwnersTable)
-    .where(and(eq(businessOwnersTable.businessId, businessId), eq(businessOwnersTable.userId, userId), eq(businessOwnersTable.isActive, true)));
-  if (!owner) throw new ForbiddenError("Not an owner of this business");
-}
 
 router.get("/", requireMarketplace, async (req, res, next): Promise<void> => {
   try {
@@ -82,7 +72,7 @@ router.post("/", requireAuth, requireMarketplace, async (req, res, next): Promis
   try {
     const businessId = String(req.params["businessId"]);
     const user = req.user!;
-    await assertOwner(businessId, user.id, req.marketplace!.id);
+    await assertBusinessOwner(businessId, user.id, req.marketplace!.id);
 
     const body = ServiceSchema.safeParse(req.body);
     if (!body.success) return next(new ValidationError("Invalid input", body.error.flatten()));
@@ -97,7 +87,7 @@ router.post("/", requireAuth, requireMarketplace, async (req, res, next): Promis
 
     const [service] = await db
       .insert(servicesTable)
-      .values({ businessId, ...body.data, slug, status: "active" })
+      .values({ businessId, ...body.data, slug })
       .returning();
 
     await publishEvent(db, {
@@ -118,7 +108,7 @@ router.patch("/:id", requireAuth, requireMarketplace, async (req, res, next): Pr
     const businessId = String(req.params["businessId"]);
     const id = String(req.params["id"]);
     const user = req.user!;
-    await assertOwner(businessId, user.id, req.marketplace!.id);
+    await assertBusinessOwner(businessId, user.id, req.marketplace!.id);
 
     const [service] = await db
       .select()
@@ -153,7 +143,7 @@ router.delete("/:id", requireAuth, requireMarketplace, async (req, res, next): P
     const businessId = String(req.params["businessId"]);
     const id = String(req.params["id"]);
     const user = req.user!;
-    await assertOwner(businessId, user.id, req.marketplace!.id);
+    await assertBusinessOwner(businessId, user.id, req.marketplace!.id);
 
     await db
       .update(servicesTable)

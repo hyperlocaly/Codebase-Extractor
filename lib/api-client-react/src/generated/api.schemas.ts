@@ -336,7 +336,9 @@ export interface ProductSummary {
   description?: string | null;
   price?: string | null;
   unit?: string | null;
+  imageUrl?: string | null;
   stockStatus: ProductSummaryStockStatus;
+  categoryId?: string | null;
   status: string;
   sortOrder?: number;
   createdAt?: string;
@@ -357,6 +359,7 @@ export type ProductInputStatus = typeof ProductInputStatus[keyof typeof ProductI
 export const ProductInputStatus = {
   active: 'active',
   draft: 'draft',
+  archived: 'archived',
 } as const;
 
 export interface ProductInput {
@@ -365,6 +368,7 @@ export interface ProductInput {
   price?: string;
   currencyId?: string;
   unit?: string;
+  imageUrl?: string;
   stockStatus?: ProductInputStockStatus;
   status?: ProductInputStatus;
   categoryId?: string;
@@ -379,8 +383,10 @@ export interface ServiceSummary {
   description?: string | null;
   priceFrom?: string | null;
   priceTo?: string | null;
+  imageUrl?: string | null;
   durationMinutes?: number | null;
   availability?: string | null;
+  categoryId?: string | null;
   status: string;
   sortOrder?: number;
   createdAt?: string;
@@ -392,6 +398,7 @@ export type ServiceInputStatus = typeof ServiceInputStatus[keyof typeof ServiceI
 export const ServiceInputStatus = {
   active: 'active',
   draft: 'draft',
+  archived: 'archived',
 } as const;
 
 export interface ServiceInput {
@@ -400,6 +407,7 @@ export interface ServiceInput {
   priceFrom?: string;
   priceTo?: string;
   currencyId?: string;
+  imageUrl?: string;
   durationMinutes?: number;
   availability?: string;
   status?: ServiceInputStatus;

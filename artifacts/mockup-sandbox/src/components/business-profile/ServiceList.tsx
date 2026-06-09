@@ -1,5 +1,6 @@
 import type { ListServices200 } from '@workspace/api-client-react';
-import { Clock, Scissors } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Clock, Scissors } from 'lucide-react';
 
 type Service = NonNullable<ListServices200['data']>[number];
 
@@ -21,26 +22,41 @@ function formatPriceRange(from: string | null | undefined, to: string | null | u
 function ServiceCard({ service }: { service: Service }) {
   const price = formatPriceRange(service.priceFrom, service.priceTo);
   const duration = formatDuration(service.durationMinutes);
+  const imageUrl = (service as any).imageUrl as string | null | undefined;
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4 transition-shadow hover:shadow-sm">
-      <h4 className="font-medium leading-snug">{service.name}</h4>
-      {service.description && (
-        <p className="line-clamp-2 text-sm text-muted-foreground">{service.description}</p>
+    <div className="flex flex-col rounded-xl border bg-card overflow-hidden transition-shadow hover:shadow-sm">
+      {imageUrl && (
+        <div className="aspect-video w-full overflow-hidden bg-muted/30">
+          <img
+            src={imageUrl}
+            alt={service.name}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).parentElement!.style.display = 'none';
+            }}
+          />
+        </div>
       )}
-      <div className="mt-auto flex flex-wrap items-center gap-3 pt-1">
-        {price && (
-          <span className="text-base font-semibold text-primary">{price}</span>
+      <div className="flex flex-col gap-2 p-4">
+        <h4 className="font-medium leading-snug">{service.name}</h4>
+        {service.description && (
+          <p className="line-clamp-2 text-sm text-muted-foreground">{service.description}</p>
         )}
-        {duration && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {duration}
-          </span>
-        )}
-        {service.availability && (
-          <span className="text-xs text-muted-foreground">{service.availability}</span>
-        )}
+        <div className="mt-auto flex flex-wrap items-center gap-3 pt-1">
+          {price && (
+            <span className="text-base font-semibold text-primary">{price}</span>
+          )}
+          {duration && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {duration}
+            </span>
+          )}
+          {service.availability && (
+            <span className="text-xs text-muted-foreground">{service.availability}</span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -49,9 +65,11 @@ function ServiceCard({ service }: { service: Service }) {
 interface ServiceListProps {
   services: Service[];
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
-export function ServiceList({ services, isLoading }: ServiceListProps) {
+export function ServiceList({ services, isLoading, isError, onRetry }: ServiceListProps) {
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
@@ -63,6 +81,20 @@ export function ServiceList({ services, isLoading }: ServiceListProps) {
             <div className="h-5 w-28 animate-pulse rounded bg-muted pt-1" />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed bg-muted/20 py-12 text-center">
+        <AlertCircle className="h-8 w-8 text-destructive/50" />
+        <p className="text-sm font-medium text-destructive">Failed to load services</p>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Try again
+          </Button>
+        )}
       </div>
     );
   }

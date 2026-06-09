@@ -884,7 +884,9 @@ export const ListProductsResponse = zod.object({
   "description": zod.string().nullish(),
   "price": zod.string().nullish(),
   "unit": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
   "stockStatus": zod.enum(['in_stock', 'out_of_stock', 'made_to_order']),
+  "categoryId": zod.string().uuid().nullish(),
   "status": zod.string(),
   "sortOrder": zod.number().optional(),
   "createdAt": zod.coerce.date().optional()
@@ -914,8 +916,9 @@ export const CreateProductBody = zod.object({
   "price": zod.string().optional(),
   "currencyId": zod.string().uuid().optional(),
   "unit": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
   "stockStatus": zod.enum(['in_stock', 'out_of_stock', 'made_to_order']).optional(),
-  "status": zod.enum(['active', 'draft']).optional(),
+  "status": zod.enum(['active', 'draft', 'archived']).optional(),
   "categoryId": zod.string().uuid().optional(),
   "sortOrder": zod.number().optional()
 })
@@ -939,8 +942,9 @@ export const UpdateProductBody = zod.object({
   "price": zod.string().optional(),
   "currencyId": zod.string().uuid().optional(),
   "unit": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
   "stockStatus": zod.enum(['in_stock', 'out_of_stock', 'made_to_order']).optional(),
-  "status": zod.enum(['active', 'draft']).optional(),
+  "status": zod.enum(['active', 'draft', 'archived']).optional(),
   "categoryId": zod.string().uuid().optional(),
   "sortOrder": zod.number().optional()
 })
@@ -954,7 +958,9 @@ export const UpdateProductResponse = zod.object({
   "description": zod.string().nullish(),
   "price": zod.string().nullish(),
   "unit": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
   "stockStatus": zod.enum(['in_stock', 'out_of_stock', 'made_to_order']),
+  "categoryId": zod.string().uuid().nullish(),
   "status": zod.string(),
   "sortOrder": zod.number().optional(),
   "createdAt": zod.coerce.date().optional()
@@ -1000,8 +1006,10 @@ export const ListServicesResponse = zod.object({
   "description": zod.string().nullish(),
   "priceFrom": zod.string().nullish(),
   "priceTo": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
   "durationMinutes": zod.number().nullish(),
   "availability": zod.string().nullish(),
+  "categoryId": zod.string().uuid().nullish(),
   "status": zod.string(),
   "sortOrder": zod.number().optional(),
   "createdAt": zod.coerce.date().optional()
@@ -1031,9 +1039,10 @@ export const CreateServiceBody = zod.object({
   "priceFrom": zod.string().optional(),
   "priceTo": zod.string().optional(),
   "currencyId": zod.string().uuid().optional(),
+  "imageUrl": zod.string().optional(),
   "durationMinutes": zod.number().optional(),
   "availability": zod.string().optional(),
-  "status": zod.enum(['active', 'draft']).optional(),
+  "status": zod.enum(['active', 'draft', 'archived']).optional(),
   "categoryId": zod.string().uuid().optional(),
   "sortOrder": zod.number().optional()
 })
@@ -1057,9 +1066,10 @@ export const UpdateServiceBody = zod.object({
   "priceFrom": zod.string().optional(),
   "priceTo": zod.string().optional(),
   "currencyId": zod.string().uuid().optional(),
+  "imageUrl": zod.string().optional(),
   "durationMinutes": zod.number().optional(),
   "availability": zod.string().optional(),
-  "status": zod.enum(['active', 'draft']).optional(),
+  "status": zod.enum(['active', 'draft', 'archived']).optional(),
   "categoryId": zod.string().uuid().optional(),
   "sortOrder": zod.number().optional()
 })
@@ -1073,8 +1083,10 @@ export const UpdateServiceResponse = zod.object({
   "description": zod.string().nullish(),
   "priceFrom": zod.string().nullish(),
   "priceTo": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
   "durationMinutes": zod.number().nullish(),
   "availability": zod.string().nullish(),
+  "categoryId": zod.string().uuid().nullish(),
   "status": zod.string(),
   "sortOrder": zod.number().optional(),
   "createdAt": zod.coerce.date().optional()

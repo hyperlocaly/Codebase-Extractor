@@ -29,8 +29,12 @@ interface BusinessTabsProps {
   contacts: NonNullable<ListBusinessContacts200['data']>;
   products: NonNullable<ListProducts200['data']>;
   productsLoading: boolean;
+  productsError?: boolean;
+  onRetryProducts?: () => void;
   services: NonNullable<ListServices200['data']>;
   servicesLoading: boolean;
+  servicesError?: boolean;
+  onRetryServices?: () => void;
   portfolios: Record<string, unknown>[];
   portfoliosLoading: boolean;
   reviews: NonNullable<ListReviews200['data']>;
@@ -149,8 +153,12 @@ export function BusinessTabs(props: BusinessTabsProps) {
     hoursLoading,
     products,
     productsLoading,
+    productsError,
+    onRetryProducts,
     services,
     servicesLoading,
+    servicesError,
+    onRetryServices,
     portfolios,
     portfoliosLoading,
     reviews,
@@ -215,11 +223,21 @@ export function BusinessTabs(props: BusinessTabsProps) {
         </TabsContent>
 
         <TabsContent value="products" className="mt-0">
-          <ProductList products={products} isLoading={productsLoading} />
+          <ProductList
+            products={products}
+            isLoading={productsLoading}
+            isError={productsError}
+            onRetry={onRetryProducts}
+          />
         </TabsContent>
 
         <TabsContent value="services" className="mt-0">
-          <ServiceList services={services} isLoading={servicesLoading} />
+          <ServiceList
+            services={services}
+            isLoading={servicesLoading}
+            isError={servicesError}
+            onRetry={onRetryServices}
+          />
         </TabsContent>
 
         <TabsContent value="portfolio" className="mt-0">
