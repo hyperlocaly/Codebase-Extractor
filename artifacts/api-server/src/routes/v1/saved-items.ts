@@ -1,8 +1,13 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { savedItemsTable } from "@workspace/db";
+import {
+  savedItemsTable,
+  businessesTable,
+  productsTable,
+  servicesTable,
+} from "@workspace/db";
 import { requireAuth } from "../../middleware/auth";
 import { requireMarketplace } from "../../middleware/marketplace-context";
 import { sendSuccess, sendCreated, sendNoContent, sendPaginated } from "../../shared/response";
@@ -29,7 +34,49 @@ router.get("/", requireAuth, requireMarketplace, async (req, res, next): Promise
       .orderBy(desc(savedItemsTable.createdAt))
       .limit(limit + 1);
 
-    sendPaginated(res, rows.slice(0, limit), buildNextCursor(rows, limit));
+    const pageRows = rows.slice(0, limit);
+
+    // Batch-enrich by entity type
+    const businessIds = pageRows.filter((r) => r.entityType === "business").map((r) => r.entityId);
+    const productIds  = pageRows.filter((r) => r.entityType === "product").map((r) => r.entityId);
+    const serviceIds  = pageRows.filter((r) => r.entityType === "service").map((r) => r.entityId);
+
+    const [businesses, products, services] = await Promise.all([
+      businessIds.length > 0
+        ? db.select({ id: businessesTable.id, name: businessesTable.name, slug: businessesTable.slug })
+            .from(businessesTable).where(inArray(businessesTable.id, businessIds))
+        : Promise.resolve([]),
+      productIds.length > 0
+        ? db.select({ id: productsTable.id, name: productsTable.name, slug: productsTable.slug, businessId: productsTable.businessId })
+            .from(productsTable).where(inArray(productsTable.id, productIds))
+        : Promise.resolve([]),
+      serviceIds.length > 0
+        ? db.select({ id: servicesTable.id, name: servicesTable.name, slug: servicesTable.slug, businessId: servicesTable.businessId })
+            .from(servicesTable).where(inArray(servicesTable.id, serviceIds))
+        : Promise.resolve([]),
+    ]);
+
+    const bizMap  = new Map(businesses.map((b) => [b.id, b]));
+    const prodMap = new Map(products.map((p) => [p.id, p]));
+    const svcMap  = new Map(services.map((s) => [s.id, s]));
+
+    const enriched = pageRows.map((row) => {
+      if (row.entityType === "business") {
+        const biz = bizMap.get(row.entityId);
+        return { ...row, entityName: biz?.name ?? null, entitySlug: biz?.slug ?? null, businessId: null };
+      }
+      if (row.entityType === "product") {
+        const prod = prodMap.get(row.entityId);
+        return { ...row, entityName: prod?.name ?? null, entitySlug: prod?.slug ?? null, businessId: prod?.businessId ?? null };
+      }
+      if (row.entityType === "service") {
+        const svc = svcMap.get(row.entityId);
+        return { ...row, entityName: svc?.name ?? null, entitySlug: svc?.slug ?? null, businessId: svc?.businessId ?? null };
+      }
+      return { ...row, entityName: null, entitySlug: null, businessId: null };
+    });
+
+    sendPaginated(res, enriched, buildNextCursor(rows, limit));
   } catch (err) { next(err); }
 });
 

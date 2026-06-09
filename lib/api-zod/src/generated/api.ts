@@ -1544,8 +1544,16 @@ export const ListSavedItemsQueryParams = zod.object({
 
 export const ListSavedItemsResponse = zod.object({
   "data": zod.array(zod.object({
-
-}).passthrough()).optional(),
+  "id": zod.string().uuid(),
+  "entityType": zod.enum(['business', 'product', 'service']),
+  "entityId": zod.string().uuid(),
+  "entityName": zod.string().nullish(),
+  "entitySlug": zod.string().nullish(),
+  "businessId": zod.string().uuid().nullish(),
+  "marketplaceId": zod.string().uuid().optional(),
+  "userId": zod.string().uuid().optional(),
+  "createdAt": zod.coerce.date()
+})).optional(),
   "pagination": zod.object({
   "nextCursor": zod.string().nullable(),
   "hasMore": zod.boolean(),

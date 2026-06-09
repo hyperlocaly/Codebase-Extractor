@@ -14,14 +14,17 @@
     "seed:event-types": "tsx ./src/seeds/event-types.ts",
     "seed:location-nigeria": "tsx ./src/seeds/location-nigeria.ts",
     "seed:templates": "tsx ./src/seeds/templates.ts",
+    "seed:admin-user": "tsx ./src/seeds/admin-user.ts",
     "seed:all": "tsx ./src/seeds/run-all.ts"
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
     "@workspace/domain-constants": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "catalog:",
     "tsx": "catalog:"
   }

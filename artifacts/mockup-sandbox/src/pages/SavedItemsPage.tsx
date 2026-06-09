@@ -29,6 +29,7 @@ import {
   AlertCircle,
   RefreshCw,
   Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +39,9 @@ interface SavedItem {
   id: string;
   entityType: 'business' | 'product' | 'service';
   entityId: string;
+  entityName?: string | null;
+  entitySlug?: string | null;
+  businessId?: string | null;
   createdAt: string;
 }
 
@@ -67,6 +71,9 @@ function SavedItemCard({
   const cfg = ENTITY_CONFIG[item.entityType] ?? ENTITY_CONFIG.business;
   const Icon = cfg.icon;
 
+  const displayName = item.entityName ?? item.entityId;
+  const isFallbackId = !item.entityName;
+
   return (
     <div className="flex items-center gap-4 rounded-xl border bg-card p-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -74,7 +81,7 @@ function SavedItemCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 mb-0.5">
           <Badge variant="secondary" className="text-xs">
             {cfg.label}
           </Badge>
@@ -82,10 +89,19 @@ function SavedItemCard({
             Saved {formatDate(item.createdAt)}
           </span>
         </div>
-        <p className="mt-0.5 truncate text-sm text-muted-foreground font-mono">
-          {item.entityId}
+        <p className={`truncate text-sm font-medium ${isFallbackId ? 'font-mono text-muted-foreground text-xs' : ''}`}>
+          {displayName}
         </p>
-        {item.entityType === 'business' && (
+        {item.entityType === 'business' && item.entitySlug && (
+          <Link
+            to={`/business/${item.entitySlug}`}
+            className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            View business
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        )}
+        {item.entityType === 'business' && !item.entitySlug && (
           <Link
             to="/directory"
             className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
@@ -195,9 +211,7 @@ export default function SavedItemsPage() {
         params: { marketplace: MARKETPLACE_SLUG },
       });
       toast.success('Removed from saved items.');
-      // Remove from local state immediately
       setAllItems((prev) => prev.filter((i) => i.id !== item.id));
-      // Invalidate all saved-items queries by base key
       queryClient.invalidateQueries({ queryKey: [SAVED_ITEMS_BASE_KEY] });
     } catch {
       toast.error('Failed to remove. Please try again.');
@@ -288,7 +302,9 @@ export default function SavedItemsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove saved item?</AlertDialogTitle>
             <AlertDialogDescription>
-              This {pendingRemove?.entityType ?? 'item'} will be removed from your saved list.
+              {pendingRemove?.entityName
+                ? `"${pendingRemove.entityName}" will be removed from your saved list.`
+                : `This ${pendingRemove?.entityType ?? 'item'} will be removed from your saved list.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

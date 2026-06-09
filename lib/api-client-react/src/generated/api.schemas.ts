@@ -1238,7 +1238,26 @@ limit?: number;
 cursor?: string;
 };
 
-export type ListSavedItems200DataItem = { [key: string]: unknown };
+export type ListSavedItems200DataItemEntityType = typeof ListSavedItems200DataItemEntityType[keyof typeof ListSavedItems200DataItemEntityType];
+
+
+export const ListSavedItems200DataItemEntityType = {
+  business: 'business',
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type ListSavedItems200DataItem = {
+  id: string;
+  entityType: ListSavedItems200DataItemEntityType;
+  entityId: string;
+  entityName?: string | null;
+  entitySlug?: string | null;
+  businessId?: string | null;
+  marketplaceId?: string;
+  userId?: string;
+  createdAt: string;
+};
 
 export type ListSavedItems200 = {
   data?: ListSavedItems200DataItem[];

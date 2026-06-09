@@ -2189,7 +2189,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Paginated saved items
+          description: Paginated saved items (enriched with entity names)
           content:
             application/json:
               schema:
@@ -2199,6 +2199,36 @@ paths:
                     type: array
                     items:
                       type: object
+                      required: [id, entityType, entityId, createdAt]
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        entityType:
+                          type: string
+                          enum: [business, product, service]
+                        entityId:
+                          type: string
+                          format: uuid
+                        entityName:
+                          type: string
+                          nullable: true
+                        entitySlug:
+                          type: string
+                          nullable: true
+                        businessId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        marketplaceId:
+                          type: string
+                          format: uuid
+                        userId:
+                          type: string
+                          format: uuid
+                        createdAt:
+                          type: string
+                          format: date-time
                   pagination:
                     $ref: "#/components/schemas/PaginationMeta"
     post:

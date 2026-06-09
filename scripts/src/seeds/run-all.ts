@@ -14,6 +14,7 @@ const SEEDS_IN_ORDER = [
   "seed:roles-permissions",
   "seed:event-types",
   "seed:templates",
+  "seed:admin-user",
 ];
 
 console.log("Running all seeds in order...\n");
