@@ -27,6 +27,7 @@ const ProductsPage = lazy(() => import('@/pages/dashboard/ProductsPage'));
 const ServicesPage = lazy(() => import('@/pages/dashboard/ServicesPage'));
 const PortfolioPage = lazy(() => import('@/pages/dashboard/PortfolioPage'));
 const ReviewsPage = lazy(() => import('@/pages/dashboard/ReviewsPage'));
+const UpdatesPage = lazy(() => import('@/pages/dashboard/UpdatesPage'));
 const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage'));
 
 function PageLoader() {
@@ -163,13 +164,7 @@ export const router = createBrowserRouter(
             },
             {
               path: '/dashboard/updates',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Updates — coming in Sprint 7
-                  </p>
-                </div>
-              ),
+              element: withSuspense(UpdatesPage),
             },
             {
               path: '/dashboard/branches',
