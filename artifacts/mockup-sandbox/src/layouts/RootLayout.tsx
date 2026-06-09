@@ -13,10 +13,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Scissors, Menu, LayoutDashboard, LogOut, LogIn, UserPlus, Store } from 'lucide-react';
+import { Scissors, Menu, LayoutDashboard, LogOut, LogIn, UserPlus, Store, Bookmark } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SearchBar } from '@/components/search/SearchBar';
+import { NotificationBell } from '@/components/NotificationBell';
 
 function UserMenu() {
   const { user, logout } = useAuth();
@@ -62,7 +63,7 @@ function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/saved" className="cursor-pointer">
-            <Store className="mr-2 h-4 w-4" />
+            <Bookmark className="mr-2 h-4 w-4" />
             Saved Items
           </Link>
         </DropdownMenuItem>
@@ -106,11 +107,14 @@ export default function RootLayout() {
             <SearchBar placeholder="Search businesses…" className="w-full" />
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2">
             {!isLoading && (
               <>
                 {isAuthenticated ? (
-                  <UserMenu />
+                  <>
+                    <NotificationBell isAuthenticated={isAuthenticated} />
+                    <UserMenu />
+                  </>
                 ) : (
                   <div className="hidden items-center gap-2 sm:flex">
                     <Button variant="ghost" size="sm" asChild>
@@ -163,6 +167,25 @@ export default function RootLayout() {
                     >
                       Search
                     </Link>
+                    {isAuthenticated && (
+                      <>
+                        <Link
+                          to="/saved"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          <Bookmark className="h-4 w-4" />
+                          Saved Items
+                        </Link>
+                        <Link
+                          to="/notifications"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          Notifications
+                        </Link>
+                      </>
+                    )}
                   </nav>
                   {!isAuthenticated && (
                     <div className="flex flex-col gap-2 border-t pt-4">

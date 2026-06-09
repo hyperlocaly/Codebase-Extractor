@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type {
   GetBusiness200,
   GetBusinessHours200,
@@ -16,6 +16,7 @@ import {
   useListReviews,
   useAuthMe,
   ListReviewsSort,
+  getListReviewsQueryKey,
 } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoursTable } from './HoursTable';
@@ -27,7 +28,8 @@ import { ReviewList, type SortOption } from './ReviewList';
 import { ReviewForm } from './ReviewForm';
 import { UpdatesList } from './UpdatesList';
 import { Separator } from '@/components/ui/separator';
-import { Globe, Info, Images, MessageSquare, Package, Rss, Scissors } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Globe, Info, Images, MessageSquare, Package, Rss, Scissors, Loader2 } from 'lucide-react';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 
 type BusinessDetail = NonNullable<GetBusiness200['data']>;
@@ -163,49 +165,128 @@ function ReviewsSection({
 }) {
   const [sort, setSort] = useState<SortOption>('newest');
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [allReviews, setAllReviews] = useState<ReviewWithResponse[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const isFirstPageRef = useRef(true);
 
   const { data: meData } = useAuthMe();
   const isAuthenticated = !!(meData as any)?.data;
 
-  const {
-    data: reviewsData,
-    isLoading,
-    isError,
-    refetch,
-  } = useListReviews({
+  const queryKey = getListReviewsQueryKey({
     businessId,
     marketplace: MARKETPLACE_SLUG,
-    limit: 50,
+    limit: 20,
     sort: sort as ListReviewsSort,
     rating: ratingFilter,
+    cursor,
   });
 
-  const reviews = (reviewsData?.data ?? []) as ReviewWithResponse[];
-
-  const userReviewId = isAuthenticated
-    ? (meData as any)?.data?.id
-    : null;
-  const hasExistingReview = !!userReviewId && reviews.some(
-    (r) => !r.isAnonymous && (r as any).reviewerId === userReviewId,
+  const {
+    data,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useListReviews(
+    {
+      businessId,
+      marketplace: MARKETPLACE_SLUG,
+      limit: 20,
+      sort: sort as ListReviewsSort,
+      rating: ratingFilter,
+      cursor,
+    },
+    { query: { queryKey } },
   );
+
+  useEffect(() => {
+    if (!data?.data) return;
+    const newPage = (data.data ?? []) as ReviewWithResponse[];
+    if (isFirstPageRef.current) {
+      setAllReviews(newPage);
+    } else {
+      setAllReviews((prev) => {
+        const existingIds = new Set(prev.map((r) => r.id));
+        return [...prev, ...newPage.filter((r) => !existingIds.has(r.id))];
+      });
+    }
+    setHasMore((data as any)?.pagination?.hasMore ?? false);
+  }, [data]);
+
+  function handleSortChange(s: SortOption) {
+    isFirstPageRef.current = true;
+    setSort(s);
+    setCursor(undefined);
+    setAllReviews([]);
+  }
+
+  function handleRatingFilterChange(r: number | undefined) {
+    isFirstPageRef.current = true;
+    setRatingFilter(r);
+    setCursor(undefined);
+    setAllReviews([]);
+  }
+
+  function handleLoadMore() {
+    const nextCursor = (data as any)?.pagination?.nextCursor as string | null | undefined;
+    if (nextCursor) {
+      isFirstPageRef.current = false;
+      setCursor(nextCursor);
+    }
+  }
+
+  const userReviewId = isAuthenticated ? (meData as any)?.data?.id : null;
+  const hasExistingReview =
+    !!userReviewId &&
+    allReviews.some((r) => !r.isAnonymous && (r as any).reviewerId === userReviewId);
 
   return (
     <div className="space-y-5">
       <ReviewSummary summary={reviewSummary} />
       <ReviewList
-        reviews={reviews}
+        reviews={allReviews}
         isLoading={isLoading}
         isError={isError}
-        onRetry={() => refetch()}
+        onRetry={() => {
+          isFirstPageRef.current = true;
+          setCursor(undefined);
+          setAllReviews([]);
+          refetch();
+        }}
         sort={sort}
-        onSortChange={setSort}
+        onSortChange={handleSortChange}
         ratingFilter={ratingFilter}
-        onRatingFilterChange={setRatingFilter}
+        onRatingFilterChange={handleRatingFilterChange}
         isAuthenticated={isAuthenticated}
       />
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLoadMore}
+            disabled={isFetching}
+          >
+            {isFetching ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Loading…
+              </>
+            ) : (
+              'Load more reviews'
+            )}
+          </Button>
+        </div>
+      )}
       <ReviewForm
         businessId={businessId}
-        onSuccess={() => refetch()}
+        onSuccess={() => {
+          isFirstPageRef.current = true;
+          setCursor(undefined);
+          setAllReviews([]);
+          refetch();
+        }}
         hasExistingReview={hasExistingReview}
       />
     </div>

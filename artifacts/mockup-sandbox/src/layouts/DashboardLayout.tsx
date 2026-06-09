@@ -26,6 +26,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface NavItem {
   to: string;
@@ -137,6 +138,7 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
 }
 
 export default function DashboardLayout() {
+  const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -171,6 +173,7 @@ export default function DashboardLayout() {
           </Button>
 
           <div className="ml-auto flex items-center gap-2">
+            <NotificationBell isAuthenticated={isAuthenticated} />
             <span className="text-xs text-muted-foreground">Dashboard</span>
           </div>
         </header>

@@ -4,3 +4,4 @@
 - [Workflow startup](workflow-startup.md) — API needs PORT=8080 inline; frontend needs PORT=8081 BASE_PATH=/__mockup; no artifact.toml at root level; push DB schema with pnpm --filter @workspace/db run push.
 - [Orval queryKey required in options](orval-query-options.md) — Orval-generated hooks require queryKey in query options; use getXxxQueryKey helpers and pass enabled alongside queryKey.
 - [Admin OpenAPI void return](admin-openapi-void.md) — Admin list endpoints must have explicit response content schemas in openapi.yaml or Orval generates Promise<void>, causing TData=never in consumers.
+- [Sprint 9 notification & saved-items quirks](sprint9-quirks.md) — markNotificationRead and deleteNotification take only {id} (no params); listNotifications returns void (as any cast); saved items have no entity enrichment; claimStatus null means unclaimed.

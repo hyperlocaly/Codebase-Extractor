@@ -32,6 +32,8 @@ const BranchesPage = lazy(() => import('@/pages/dashboard/BranchesPage'));
 const ServiceAreasPage = lazy(() => import('@/pages/dashboard/ServiceAreasPage'));
 const VerificationPage = lazy(() => import('@/pages/dashboard/VerificationPage'));
 const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage'));
+const SavedItemsPage = lazy(() => import('@/pages/SavedItemsPage'));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 
 function PageLoader() {
   return (
@@ -97,23 +99,11 @@ export const router = createBrowserRouter(
           children: [
             {
               path: '/saved',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Saved items — coming in Sprint 9
-                  </p>
-                </div>
-              ),
+              element: withSuspense(SavedItemsPage),
             },
             {
               path: '/notifications',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Notifications — coming in Sprint 9
-                  </p>
-                </div>
-              ),
+              element: withSuspense(NotificationsPage),
             },
           ],
         },
