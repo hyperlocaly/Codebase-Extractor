@@ -1,0 +1,283 @@
+SPRINT 7 POST-IMPLEMENTATION AUDIT
+
+IMPORTANT
+
+Do NOT write code.
+
+Do NOT modify files.
+
+Do NOT regenerate code.
+
+Do NOT fix anything.
+
+This is an audit-only task.
+
+Your job is to verify whether Sprint 7 was truly completed according to the original specification.
+
+Produce a gap analysis report.
+
+---
+
+OBJECTIVE
+
+Compare:
+
+1. Original Sprint 7 specification
+2. Actual implementation currently in the repository
+
+Identify:
+
+* Fully implemented items
+* Partially implemented items
+* Simplified implementations
+* Missing implementations
+* Potential future risks
+
+Be strict.
+
+Do not assume something is complete merely because a page exists.
+
+Verify actual behavior.
+
+---
+
+PHASE 1 — PRODUCTS
+
+Verify:
+
+* ProductsPage exists
+* Product creation works
+* Product editing works
+* Product deletion works
+* Product status management works
+* Product search/filter works
+* Product ownership enforcement works
+* Product images are supported
+* Product inventory status is supported
+
+For each item classify:
+
+* Fully Implemented
+* Partially Implemented
+* Missing
+
+Provide evidence.
+
+---
+
+PHASE 2 — SERVICES
+
+Verify:
+
+* ServicesPage exists
+* Service creation works
+* Service editing works
+* Service deletion works
+* Service status management works
+* Service search/filter works
+* Service ownership enforcement works
+* Service images are supported
+* Service price ranges are supported
+
+For each item classify:
+
+* Fully Implemented
+* Partially Implemented
+* Missing
+
+Provide evidence.
+
+---
+
+PHASE 3 — ROUTING
+
+Verify whether the following exist:
+
+* /dashboard/products
+
+* /dashboard/products/new
+
+* /dashboard/products/:id/edit
+
+* /dashboard/services
+
+* /dashboard/services/new
+
+* /dashboard/services/:id/edit
+
+If alternative UX was implemented instead:
+
+Example:
+
+* Sheet modal
+* Drawer
+* Inline editing
+
+Document it.
+
+Classify as:
+
+* Matches Spec
+* Equivalent Alternative
+* Missing
+
+---
+
+PHASE 4 — SHARED COMPONENTS
+
+Verify existence of:
+
+* ProductCard
+* ServiceCard
+* ProductForm
+* ServiceForm
+* ProductTable
+* ServiceTable
+
+For each:
+
+* Exists and used
+* Exists but unused
+* Missing
+
+Provide file locations.
+
+---
+
+PHASE 5 — PUBLIC PROFILE INTEGRATION
+
+Verify:
+
+Business Profile page displays:
+
+* Products
+* Services
+
+Check:
+
+* loading state
+* empty state
+* error state
+
+Classify each.
+
+---
+
+PHASE 6 — SEARCH INTEGRATION
+
+Verify:
+
+* search products endpoint
+* search services endpoint
+* generated hooks
+* frontend search usage
+
+Confirm products and services can actually appear in search results.
+
+Do not assume.
+
+Verify.
+
+---
+
+PHASE 7 — SECURITY AUDIT
+
+Verify ownership protection for:
+
+Products:
+
+* create
+* update
+* delete
+
+Services:
+
+* create
+* update
+* delete
+
+Confirm:
+
+* authenticated user required
+* ownership required
+* marketplace enforcement present
+
+Classify:
+
+PASS / FAIL
+
+---
+
+PHASE 8 — VERIFICATION REVIEW
+
+Review Sprint 7 completion claim.
+
+Determine:
+
+Completion Percentage
+
+Example:
+
+* 100%
+* 95%
+* 85%
+
+Base this only on verified implementation.
+
+Not intentions.
+
+Not assumptions.
+
+---
+
+FINAL REPORT FORMAT
+
+# Sprint 7 Audit Report
+
+## Fully Implemented
+
+(table)
+
+## Partially Implemented
+
+(table)
+
+## Missing
+
+(table)
+
+## Equivalent Alternatives
+
+(table)
+
+## Security Findings
+
+(table)
+
+## Routing Findings
+
+(table)
+
+## Shared Components Findings
+
+(table)
+
+## Search Findings
+
+(table)
+
+## Risks Before Sprint 8
+
+(table)
+
+## Recommended Fixes Before Sprint 8
+
+(prioritized list)
+
+## Actual Sprint 7 Completion %
+
+Give a single percentage with justification.
+
+Audit only.
+
+Do not modify any code.
