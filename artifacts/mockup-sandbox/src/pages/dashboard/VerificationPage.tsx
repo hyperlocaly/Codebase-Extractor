@@ -1,12 +1,16 @@
 import {
   useListBusinessVerifications,
+  useGetVerificationTypes,
   getListBusinessVerificationsQueryKey,
+  getGetVerificationTypesQueryKey,
 } from '@workspace/api-client-react';
+import type { GetVerificationTypes200 } from '@workspace/api-client-react';
 import { useDashboard } from '@/providers/DashboardProvider';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -17,14 +21,16 @@ import {
   AlertCircle,
   RefreshCw,
   Info,
+  Circle,
 } from 'lucide-react';
 
-interface VerificationType {
+interface VerificationApiType {
   id: string;
   code?: string;
-  name?: string;
+  label?: string;
   description?: string;
-  weight?: number;
+  scoreWeight?: number;
+  isRequired?: boolean;
 }
 
 interface VerificationRecord {
@@ -35,43 +41,62 @@ interface VerificationRecord {
   evidenceUrl?: string | null;
   createdAt: string;
   updatedAt?: string | null;
-  verificationType: VerificationType;
+  verificationType: {
+    id: string;
+    code?: string;
+    name?: string;
+    description?: string;
+    weight?: number;
+  };
 }
 
 const STATUS_CONFIG: Record<string, {
   label: string;
   color: string;
   bg: string;
+  border: string;
   icon: React.ReactNode;
 }> = {
+  not_started: {
+    label: 'Not started',
+    color: 'text-muted-foreground',
+    bg: 'bg-card',
+    border: 'border',
+    icon: <Circle className="h-4 w-4 text-muted-foreground/40" />,
+  },
   pending: {
     label: 'Pending review',
     color: 'text-amber-700 dark:text-amber-300',
     bg: 'bg-amber-50 dark:bg-amber-900/20',
+    border: 'border-amber-200 dark:border-amber-800',
     icon: <Clock className="h-4 w-4 text-amber-500" />,
   },
   in_progress: {
     label: 'In progress',
     color: 'text-blue-700 dark:text-blue-300',
     bg: 'bg-blue-50 dark:bg-blue-900/20',
+    border: 'border-blue-200 dark:border-blue-800',
     icon: <AlertCircle className="h-4 w-4 text-blue-500" />,
   },
   verified: {
     label: 'Verified',
     color: 'text-emerald-700 dark:text-emerald-300',
     bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    border: 'border-emerald-200 dark:border-emerald-800',
     icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
   },
   rejected: {
     label: 'Rejected',
     color: 'text-red-700 dark:text-red-300',
     bg: 'bg-red-50 dark:bg-red-900/20',
+    border: 'border-red-200 dark:border-red-800',
     icon: <XCircle className="h-4 w-4 text-red-500" />,
   },
   expired: {
     label: 'Expired',
     color: 'text-slate-600 dark:text-slate-400',
     bg: 'bg-slate-100 dark:bg-slate-800',
+    border: 'border-slate-200 dark:border-slate-700',
     icon: <ShieldOff className="h-4 w-4 text-slate-400" />,
   },
 };
@@ -81,6 +106,7 @@ function getStatusConfig(status: string) {
     label: status,
     color: 'text-muted-foreground',
     bg: 'bg-muted',
+    border: 'border',
     icon: <AlertCircle className="h-4 w-4 text-muted-foreground" />,
   };
 }
@@ -90,81 +116,109 @@ function formatDate(d: string | null | undefined): string {
   return new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function VerificationCard({ record }: { record: VerificationRecord }) {
-  const cfg = getStatusConfig(record.status);
-  const isExpired = record.expiresAt && new Date(record.expiresAt) < new Date();
-  const effectiveStatus = isExpired && record.status === 'verified' ? 'expired' : record.status;
-  const effectiveCfg = getStatusConfig(effectiveStatus);
+function VerificationTypeCard({
+  type,
+  record,
+}: {
+  type: VerificationApiType;
+  record: VerificationRecord | undefined;
+}) {
+  const isExpired = record?.expiresAt && new Date(record.expiresAt) < new Date();
+  const rawStatus = record ? record.status : 'not_started';
+  const effectiveStatus = isExpired && rawStatus === 'verified' ? 'expired' : rawStatus;
+  const cfg = getStatusConfig(effectiveStatus);
 
   return (
-    <div className={`rounded-xl border p-4 space-y-3 ${effectiveCfg.bg}`}>
+    <div className={`rounded-xl border p-4 space-y-3 ${cfg.bg} ${cfg.border}`}>
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {effectiveCfg.icon}
-          <span className="text-sm font-semibold">
-            {record.verificationType.name ?? record.verificationType.code ?? 'Verification'}
+        <div className="flex items-center gap-2 min-w-0">
+          {cfg.icon}
+          <span className="text-sm font-semibold truncate">
+            {type.label ?? type.code ?? 'Verification'}
           </span>
+          {type.isRequired && (
+            <Badge variant="outline" className="shrink-0 text-xs border-red-300 text-red-600">
+              Required
+            </Badge>
+          )}
         </div>
-        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${effectiveCfg.color} ${effectiveCfg.bg} border`}>
-          {effectiveCfg.label}
+        <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.color} ${cfg.bg} border ${cfg.border}`}>
+          {cfg.label}
         </span>
       </div>
 
-      {record.verificationType.description && (
-        <p className="text-xs text-muted-foreground">{record.verificationType.description}</p>
+      {type.description && (
+        <p className="text-xs text-muted-foreground">{type.description}</p>
       )}
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>Submitted</span>
-        <span className="font-medium text-foreground">{formatDate(record.createdAt)}</span>
+      {record && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>Submitted</span>
+          <span className="font-medium text-foreground">{formatDate(record.createdAt)}</span>
 
-        {record.verifiedAt && (
-          <>
-            <span>Verified</span>
-            <span className="font-medium text-foreground">{formatDate(record.verifiedAt)}</span>
-          </>
+          {record.verifiedAt && (
+            <>
+              <span>Verified</span>
+              <span className="font-medium text-foreground">{formatDate(record.verifiedAt)}</span>
+            </>
+          )}
+
+          {record.expiresAt && (
+            <>
+              <span>Expires</span>
+              <span className={`font-medium ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
+                {formatDate(record.expiresAt)}
+                {isExpired ? ' (expired)' : ''}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-4">
+        {type.scoreWeight !== undefined && type.scoreWeight > 0 && (
+          <span className="text-xs text-muted-foreground">
+            Score weight: <span className="font-medium text-foreground">{type.scoreWeight}%</span>
+          </span>
         )}
-
-        {record.expiresAt && (
-          <>
-            <span>Expires</span>
-            <span className={`font-medium ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
-              {formatDate(record.expiresAt)}
-              {isExpired ? ' (expired)' : ''}
-            </span>
-          </>
-        )}
-
-        {record.verificationType.weight !== undefined && (
-          <>
-            <span>Score weight</span>
-            <span className="font-medium text-foreground">{record.verificationType.weight}%</span>
-          </>
+        {record?.evidenceUrl && (
+          <a
+            href={record.evidenceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+          >
+            View evidence ↗
+          </a>
         )}
       </div>
-
-      {record.evidenceUrl && (
-        <a
-          href={record.evidenceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
-        >
-          View submitted evidence ↗
-        </a>
-      )}
     </div>
   );
 }
 
-function ScoreSummary({ records }: { records: VerificationRecord[] }) {
-  const verified = records.filter((r) => {
+function ScoreSummary({
+  types,
+  records,
+}: {
+  types: VerificationApiType[];
+  records: VerificationRecord[];
+}) {
+  const recordsByTypeId = new Map(records.map((r) => [r.verificationType.id, r]));
+
+  const totalWeight = types.reduce((sum, t) => sum + (t.scoreWeight ?? 0), 0);
+  const earnedWeight = types.reduce((sum, t) => {
+    const rec = recordsByTypeId.get(t.id);
+    if (!rec || rec.status !== 'verified') return sum;
+    const isExpired = rec.expiresAt && new Date(rec.expiresAt) < new Date();
+    if (isExpired) return sum;
+    return sum + (t.scoreWeight ?? 0);
+  }, 0);
+
+  const verifiedCount = records.filter((r) => {
     const isExpired = r.expiresAt && new Date(r.expiresAt) < new Date();
     return r.status === 'verified' && !isExpired;
-  });
+  }).length;
 
-  const totalWeight = records.reduce((sum, r) => sum + (r.verificationType.weight ?? 0), 0);
-  const earnedWeight = verified.reduce((sum, r) => sum + (r.verificationType.weight ?? 0), 0);
   const score = totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : 0;
 
   return (
@@ -178,9 +232,20 @@ function ScoreSummary({ records }: { records: VerificationRecord[] }) {
       </div>
       <Progress value={score} className="h-2" />
       <p className="text-xs text-muted-foreground">
-        {verified.length} of {records.length} verification{records.length !== 1 ? 's' : ''} active ·{' '}
+        {verifiedCount} of {types.length} verification{types.length !== 1 ? 's' : ''} active ·{' '}
         {earnedWeight} of {totalWeight} weight points earned
       </p>
+    </div>
+  );
+}
+
+function PageSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-20 w-full rounded-xl" />
+      {[0, 1, 2].map((i) => (
+        <Skeleton key={i} className="h-28 w-full rounded-xl" />
+      ))}
     </div>
   );
 }
@@ -190,18 +255,38 @@ export default function VerificationPage() {
 
   const listParams = { marketplace: MARKETPLACE_SLUG };
 
-  const { data, isLoading, isError, refetch } = useListBusinessVerifications(
-    businessId ?? '',
-    listParams,
-    {
-      query: {
-        enabled: !!businessId,
-        queryKey: getListBusinessVerificationsQueryKey(businessId ?? '', listParams),
-      },
+  const {
+    data: recordsData,
+    isLoading: isRecordsLoading,
+    isError: isRecordsError,
+    refetch: refetchRecords,
+  } = useListBusinessVerifications(businessId ?? '', listParams, {
+    query: {
+      enabled: !!businessId,
+      queryKey: getListBusinessVerificationsQueryKey(businessId ?? '', listParams),
     },
-  );
+  });
 
-  const records = ((data as any)?.data ?? []) as VerificationRecord[];
+  const {
+    data: typesData,
+    isLoading: isTypesLoading,
+    isError: isTypesError,
+    refetch: refetchTypes,
+  } = useGetVerificationTypes(businessId ?? '', listParams, {
+    query: {
+      enabled: !!businessId,
+      queryKey: getGetVerificationTypesQueryKey(businessId ?? '', listParams),
+    },
+  });
+
+  const records = ((recordsData as any)?.data ?? []) as VerificationRecord[];
+  const apiTypes = ((typesData as GetVerificationTypes200 & { data?: VerificationApiType[] })?.data ??
+    []) as VerificationApiType[];
+
+  const recordsByTypeId = new Map(records.map((r) => [r.verificationType.id, r]));
+
+  const isLoading = isRecordsLoading || isTypesLoading;
+  const isError = isRecordsError || isTypesError;
 
   const verified = records.filter((r) => {
     const isExpired = r.expiresAt && new Date(r.expiresAt) < new Date();
@@ -209,6 +294,11 @@ export default function VerificationPage() {
   });
   const pending = records.filter((r) => r.status === 'pending' || r.status === 'in_progress');
   const rejected = records.filter((r) => r.status === 'rejected');
+
+  function handleRetry() {
+    if (isRecordsError) refetchRecords();
+    if (isTypesError) refetchTypes();
+  }
 
   if (!businessId) {
     return (
@@ -239,33 +329,32 @@ export default function VerificationPage() {
       {isError ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed py-12 text-center">
           <ShieldAlert className="h-8 w-8 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">Failed to load verification records.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <p className="text-sm text-muted-foreground">Failed to load verification data.</p>
+          <Button variant="outline" size="sm" onClick={handleRetry}>
             <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             Try again
           </Button>
         </div>
       ) : isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full rounded-xl" />
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
-        </div>
-      ) : records.length === 0 ? (
+        <PageSkeleton />
+      ) : apiTypes.length === 0 && records.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed py-16 text-center">
           <ShieldCheck className="h-10 w-10 text-muted-foreground/30" />
           <div>
-            <p className="text-sm font-medium text-muted-foreground">No verifications yet</p>
+            <p className="text-sm font-medium text-muted-foreground">No verifications available</p>
             <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
-              Verification records will appear here once the Fashion Nigeria team initiates a review
-              of your business.
+              Verification types and records will appear here once the Fashion Nigeria team sets them
+              up for your marketplace.
             </p>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          <ScoreSummary records={records} />
+          {apiTypes.length > 0 && (
+            <ScoreSummary types={apiTypes} records={records} />
+          )}
 
-          {(verified.length > 0 || pending.length > 0 || rejected.length > 0) && (
+          {records.length > 0 && (
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border bg-card p-3 text-center">
                 <p className="text-xl font-bold text-emerald-600">{verified.length}</p>
@@ -282,14 +371,39 @@ export default function VerificationPage() {
             </div>
           )}
 
-          <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Verification history
-            </p>
-            {records.map((r) => (
-              <VerificationCard key={r.id} record={r} />
-            ))}
-          </div>
+          {apiTypes.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Available verifications
+              </p>
+              {apiTypes.map((type) => (
+                <VerificationTypeCard
+                  key={type.id}
+                  type={type}
+                  record={recordsByTypeId.get(type.id)}
+                />
+              ))}
+            </div>
+          ) : records.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Verification history
+              </p>
+              {records.map((r) => (
+                <VerificationTypeCard
+                  key={r.id}
+                  type={{
+                    id: r.verificationType.id,
+                    code: r.verificationType.code,
+                    label: r.verificationType.name,
+                    description: r.verificationType.description,
+                    scoreWeight: r.verificationType.weight,
+                  }}
+                  record={r}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
     </div>

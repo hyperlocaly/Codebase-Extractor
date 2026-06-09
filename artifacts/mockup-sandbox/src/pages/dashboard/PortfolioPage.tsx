@@ -10,10 +10,19 @@ import {
   useUpdatePortfolioItem,
   useDeletePortfolioItem,
   usePresignBusinessMediaUpload,
+  useAttachBusinessMedia,
+  useListBusinessMedia,
+  useDeleteBusinessMedia,
   getListPortfoliosQueryKey,
+  getListBusinessMediaQueryKey,
   ListPortfoliosStatus,
 } from '@workspace/api-client-react';
-import type { Portfolio, PortfolioItem, PortfolioCollection } from '@workspace/api-client-react';
+import type {
+  Portfolio,
+  PortfolioItem,
+  PortfolioCollection,
+  PresignBusinessMediaUpload200,
+} from '@workspace/api-client-react';
 import { useDashboard } from '@/providers/DashboardProvider';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
@@ -54,6 +63,9 @@ import {
   ChevronDown,
   ChevronUp,
   ImageOff,
+  RefreshCw,
+  AlertCircle,
+  Library,
 } from 'lucide-react';
 
 interface CollectionFormState {
@@ -68,6 +80,17 @@ interface ItemFormState {
   caption: string;
   description: string;
   externalUrl: string;
+}
+
+interface MediaRecord {
+  id: string;
+  storageKey: string;
+  fileName: string;
+  mimeType: string;
+  purpose: string;
+  sortOrder: number;
+  isPrimary: boolean;
+  createdAt: string;
 }
 
 function emptyCollectionForm(): CollectionFormState {
@@ -385,6 +408,118 @@ function CollectionCard({
   );
 }
 
+function MediaLibrarySection({
+  businessId,
+  mediaRecords,
+  isLoading,
+  isError,
+  onRefetch,
+  onDeleteMedia,
+}: {
+  businessId: string;
+  mediaRecords: MediaRecord[];
+  isLoading: boolean;
+  isError: boolean;
+  onRefetch: () => void;
+  onDeleteMedia: (record: MediaRecord) => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Library className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Media Library</span>
+        </div>
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="aspect-square rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Library className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Media Library</span>
+        </div>
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+          <p className="text-sm text-destructive flex-1">Failed to load media.</p>
+          <Button variant="outline" size="sm" onClick={onRefetch}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mediaRecords.length === 0) {
+    return (
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Library className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Media Library</span>
+          <span className="text-xs text-muted-foreground">· 0 files</span>
+        </div>
+        <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed bg-muted/10 py-8 text-center">
+          <Images className="h-7 w-7 text-muted-foreground/30" />
+          <p className="text-xs text-muted-foreground">
+            No uploaded media yet. Add images to collections above to build your library.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Library className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">Media Library</span>
+        <span className="text-xs text-muted-foreground">· {mediaRecords.length} {mediaRecords.length === 1 ? 'file' : 'files'}</span>
+      </div>
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+        {mediaRecords.map((record) => (
+          <div
+            key={record.id}
+            className="group relative aspect-square overflow-hidden rounded-lg border bg-muted"
+          >
+            <img
+              src={record.storageKey}
+              alt={record.fileName}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/60 opacity-0 group-hover:opacity-0">
+              <ImageOff className="h-5 w-5 text-muted-foreground/40" />
+            </div>
+            <div className="absolute inset-0 hidden group-hover:flex flex-col items-center justify-between bg-black/50 p-1">
+              <button
+                type="button"
+                onClick={() => onDeleteMedia(record)}
+                className="ml-auto flex h-6 w-6 items-center justify-center rounded bg-destructive/90 text-white hover:bg-destructive"
+                title="Delete media"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+              <p className="w-full truncate text-center text-xs text-white/80 px-0.5">
+                {record.fileName}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const queryClient = useQueryClient();
   const { businessId } = useDashboard();
@@ -407,16 +542,33 @@ export default function PortfolioPage() {
 
   const [deleteCollection, setDeleteCollection] = useState<Portfolio | null>(null);
   const [deleteItem, setDeleteItem] = useState<{ item: PortfolioItem; collectionId: string } | null>(null);
+  const [deleteMediaRecord, setDeleteMediaRecord] = useState<MediaRecord | null>(null);
 
   const portfolioQK = getListPortfoliosQueryKey(businessId ?? '', {
     marketplace: MARKETPLACE_SLUG,
     status: ListPortfoliosStatus.all,
   });
 
+  const mediaQK = getListBusinessMediaQueryKey(businessId ?? '', {
+    marketplace: MARKETPLACE_SLUG,
+    purpose: 'gallery',
+  });
+
   const { data: portfoliosData, isLoading, isError, refetch } = useListPortfolios(
     businessId ?? '',
     { marketplace: MARKETPLACE_SLUG, status: ListPortfoliosStatus.all },
     { query: { enabled: !!businessId, queryKey: portfolioQK } },
+  );
+
+  const {
+    data: mediaData,
+    isLoading: isMediaLoading,
+    isError: isMediaError,
+    refetch: refetchMedia,
+  } = useListBusinessMedia(
+    businessId ?? '',
+    { marketplace: MARKETPLACE_SLUG, purpose: 'gallery' },
+    { query: { enabled: !!businessId, queryKey: mediaQK } },
   );
 
   const createCollection = useCreatePortfolio();
@@ -426,8 +578,11 @@ export default function PortfolioPage() {
   const updateItem_ = useUpdatePortfolioItem();
   const deleteItem_ = useDeletePortfolioItem();
   const presign = usePresignBusinessMediaUpload();
+  const attach = useAttachBusinessMedia();
+  const deleteMedia_ = useDeleteBusinessMedia();
 
   const allCollections: PortfolioCollection[] = (portfoliosData?.data ?? []) as PortfolioCollection[];
+  const mediaRecords: MediaRecord[] = ((mediaData as any)?.data ?? []) as MediaRecord[];
 
   const filteredCollections = allCollections.filter((c) => {
     const matchesSearch =
@@ -440,20 +595,60 @@ export default function PortfolioPage() {
     return matchesSearch && matchesStatus;
   });
 
-  function invalidate() {
+  function invalidatePortfolio() {
     queryClient.invalidateQueries({ queryKey: portfolioQK });
   }
 
-  async function resolveImageUrl(pendingFile: File | null, existingUrl: string): Promise<string> {
-    if (pendingFile && businessId) {
+  function invalidateMedia() {
+    queryClient.invalidateQueries({ queryKey: mediaQK });
+  }
+
+  async function uploadMediaFile(file: File, purpose: 'gallery' | 'logo' | 'banner' = 'gallery'): Promise<string> {
+    if (!businessId) throw new Error('No business selected');
+
+    const presignResult = await presign.mutateAsync({
+      businessId,
+      data: { fileName: file.name, mimeType: file.type, purpose },
+      params: { marketplace: MARKETPLACE_SLUG },
+    });
+
+    const presignData = (presignResult as PresignBusinessMediaUpload200 & { data?: { uploadUrl?: string; storageKey?: string } })?.data ?? presignResult as any;
+    const uploadUrl: string = presignData?.uploadUrl ?? '';
+    const storageKey: string = presignData?.storageKey ?? '';
+
+    if (!storageKey) throw new Error('Presign did not return a storage key');
+
+    if (uploadUrl && !uploadUrl.includes('storage.example.com')) {
       try {
-        const result = await presign.mutateAsync({
-          businessId,
-          data: { fileName: pendingFile.name, mimeType: pendingFile.type, purpose: 'gallery' },
-          params: { marketplace: MARKETPLACE_SLUG },
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
         });
-        const storageKey = (result as any)?.data?.storageKey ?? (result as any)?.storageKey;
-        if (storageKey) return storageKey;
+      } catch {
+        // In dev the URL is a stub — continue to attach regardless
+      }
+    }
+
+    await attach.mutateAsync({
+      businessId,
+      data: {
+        storageKey,
+        fileName: file.name,
+        mimeType: file.type,
+        purpose,
+      },
+      params: { marketplace: MARKETPLACE_SLUG },
+    });
+
+    invalidateMedia();
+    return storageKey;
+  }
+
+  async function resolveImageUrl(pendingFile: File | null, existingUrl: string): Promise<string> {
+    if (pendingFile) {
+      try {
+        return await uploadMediaFile(pendingFile);
       } catch {
         toast.error('Image upload failed. Using URL if provided.');
       }
@@ -509,7 +704,7 @@ export default function PortfolioPage() {
         toast.success('Collection created.');
       }
 
-      invalidate();
+      invalidatePortfolio();
       setCollectionSheetOpen(false);
       if (featuredPreview) URL.revokeObjectURL(featuredPreview);
     } catch {
@@ -526,7 +721,7 @@ export default function PortfolioPage() {
         params: { marketplace: MARKETPLACE_SLUG },
       });
       toast.success('Collection deleted.');
-      invalidate();
+      invalidatePortfolio();
     } catch {
       toast.error('Failed to delete collection.');
     } finally {
@@ -586,7 +781,7 @@ export default function PortfolioPage() {
         toast.success('Image added.');
       }
 
-      invalidate();
+      invalidatePortfolio();
       setItemSheetOpen(false);
       if (itemPreview) URL.revokeObjectURL(itemPreview);
     } catch {
@@ -604,11 +799,28 @@ export default function PortfolioPage() {
         params: { marketplace: MARKETPLACE_SLUG },
       });
       toast.success('Image removed.');
-      invalidate();
+      invalidatePortfolio();
     } catch {
       toast.error('Failed to remove image.');
     } finally {
       setDeleteItem(null);
+    }
+  }
+
+  async function handleDeleteMedia() {
+    if (!deleteMediaRecord || !businessId) return;
+    try {
+      await deleteMedia_.mutateAsync({
+        businessId,
+        mediaId: deleteMediaRecord.id,
+        params: { marketplace: MARKETPLACE_SLUG },
+      });
+      toast.success('Media file deleted.');
+      invalidateMedia();
+    } catch {
+      toast.error('Failed to delete media file.');
+    } finally {
+      setDeleteMediaRecord(null);
     }
   }
 
@@ -642,14 +854,14 @@ export default function PortfolioPage() {
           params: { marketplace: MARKETPLACE_SLUG },
         }),
       ]);
-      invalidate();
+      invalidatePortfolio();
     } catch {
       toast.error('Failed to reorder images.');
     }
   }
 
-  const isSavingCollection = createCollection.isPending || updateCollection.isPending || presign.isPending;
-  const isSavingItem = addItem.isPending || updateItem_.isPending || presign.isPending;
+  const isSavingCollection = createCollection.isPending || updateCollection.isPending || presign.isPending || attach.isPending;
+  const isSavingItem = addItem.isPending || updateItem_.isPending || presign.isPending || attach.isPending;
 
   if (!businessId) {
     return (
@@ -750,6 +962,15 @@ export default function PortfolioPage() {
           ))}
         </div>
       )}
+
+      <MediaLibrarySection
+        businessId={businessId}
+        mediaRecords={mediaRecords}
+        isLoading={isMediaLoading}
+        isError={isMediaError}
+        onRefetch={() => refetchMedia()}
+        onDeleteMedia={(record) => setDeleteMediaRecord(record)}
+      />
 
       {/* Collection Form Sheet */}
       <Sheet open={collectionSheetOpen} onOpenChange={setCollectionSheetOpen}>
@@ -978,6 +1199,28 @@ export default function PortfolioPage() {
               onClick={handleDeleteItem}
             >
               Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Media Dialog */}
+      <AlertDialog open={!!deleteMediaRecord} onOpenChange={(o) => !o && setDeleteMediaRecord(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete media file?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{deleteMediaRecord?.fileName}&rdquo; will be permanently deleted from your media
+              library. Portfolio items using this file will lose their image.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteMedia}
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
