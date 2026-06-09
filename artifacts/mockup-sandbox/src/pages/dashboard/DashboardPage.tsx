@@ -21,6 +21,8 @@ import {
   ExternalLink,
   ShieldCheck,
   ChevronRight,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -32,7 +34,7 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
 export default function DashboardPage() {
   const { business, businessId, businessSlug } = useDashboard();
 
-  const { data: bizData, isLoading: bizLoading } = useGetBusiness(
+  const { data: bizData, isLoading: bizLoading, isError: bizError, refetch: refetchBiz } = useGetBusiness(
     businessSlug ?? '',
     { marketplace: MARKETPLACE_SLUG },
     { query: { enabled: !!businessSlug, queryKey: ['getBusiness', businessSlug] } },
@@ -118,6 +120,22 @@ export default function DashboardPage() {
           </Button>
         )}
       </div>
+
+      {bizError && businessSlug && (
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="flex-1">Failed to load business details.</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={() => void refetchBiz()}
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </Button>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>

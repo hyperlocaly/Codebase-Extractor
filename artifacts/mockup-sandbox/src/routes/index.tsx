@@ -32,6 +32,10 @@ const BranchesPage = lazy(() => import('@/pages/dashboard/BranchesPage'));
 const ServiceAreasPage = lazy(() => import('@/pages/dashboard/ServiceAreasPage'));
 const VerificationPage = lazy(() => import('@/pages/dashboard/VerificationPage'));
 const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage'));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
+const AdminBusinessesPage = lazy(() => import('@/pages/admin/AdminBusinessesPage'));
+const AdminClaimsPage = lazy(() => import('@/pages/admin/AdminClaimsPage'));
+const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AdminAnalyticsPage'));
 const SavedItemsPage = lazy(() => import('@/pages/SavedItemsPage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 
@@ -187,33 +191,15 @@ export const router = createBrowserRouter(
           children: [
             {
               path: '/admin',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Admin dashboard — coming in Sprint 10
-                  </p>
-                </div>
-              ),
+              element: withSuspense(AdminDashboardPage),
             },
             {
               path: '/admin/businesses',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Business management — coming in Sprint 10
-                  </p>
-                </div>
-              ),
+              element: withSuspense(AdminBusinessesPage),
             },
             {
               path: '/admin/claims',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Claim requests — coming in Sprint 10
-                  </p>
-                </div>
-              ),
+              element: withSuspense(AdminClaimsPage),
             },
             {
               path: '/admin/reviews',
@@ -221,13 +207,7 @@ export const router = createBrowserRouter(
             },
             {
               path: '/admin/analytics',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Analytics — coming in Sprint 10
-                  </p>
-                </div>
-              ),
+              element: withSuspense(AdminAnalyticsPage),
             },
           ],
         },

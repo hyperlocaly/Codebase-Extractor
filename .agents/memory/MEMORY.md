@@ -5,3 +5,4 @@
 - [Orval queryKey required in options](orval-query-options.md) — Orval-generated hooks require queryKey in query options; use getXxxQueryKey helpers and pass enabled alongside queryKey.
 - [Admin OpenAPI void return](admin-openapi-void.md) — Admin list endpoints must have explicit response content schemas in openapi.yaml or Orval generates Promise<void>, causing TData=never in consumers.
 - [Sprint 9 notification & saved-items quirks](sprint9-quirks.md) — markNotificationRead and deleteNotification take only {id} (no params); listNotifications returns void (as any cast); saved items have no entity enrichment; claimStatus null means unclaimed.
+- [Sprint 10 admin pages complete](sprint10-admin.md) — All 4 admin pages built; OpenAPI response schemas added for 6 admin endpoints; codegen regenerated; templates write routes protected with requirePermission("admin:manage"); verification GET protected with requireAuth.

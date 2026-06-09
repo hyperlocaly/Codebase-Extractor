@@ -13,6 +13,7 @@ import {
 } from "@workspace/db";
 import { requireAuth } from "../../middleware/auth";
 import { requireMarketplace } from "../../middleware/marketplace-context";
+import { requirePermission } from "../../middleware/rbac";
 import { sendSuccess, sendCreated, sendNoContent } from "../../shared/response";
 import { NotFoundError, ValidationError, ConflictError } from "../../shared/errors";
 
@@ -83,7 +84,7 @@ router.get("/locations/:id", async (req, res, next): Promise<void> => {
 });
 
 // POST /api/v1/templates/locations
-router.post("/locations", requireAuth, async (req, res, next): Promise<void> => {
+router.post("/locations", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const body = LocationTemplateSchema.safeParse(req.body);
     if (!body.success) return next(new ValidationError("Invalid input", body.error.flatten()));
@@ -104,7 +105,7 @@ router.post("/locations", requireAuth, async (req, res, next): Promise<void> => 
 });
 
 // POST /api/v1/templates/locations/:id/clone
-router.post("/locations/:id/clone", requireAuth, async (req, res, next): Promise<void> => {
+router.post("/locations/:id/clone", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     const [source] = await db.select().from(locationTemplatesTable)
@@ -125,7 +126,7 @@ router.post("/locations/:id/clone", requireAuth, async (req, res, next): Promise
 });
 
 // PATCH /api/v1/templates/locations/:id
-router.patch("/locations/:id", requireAuth, async (req, res, next): Promise<void> => {
+router.patch("/locations/:id", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     const [template] = await db.select().from(locationTemplatesTable)
@@ -139,7 +140,7 @@ router.patch("/locations/:id", requireAuth, async (req, res, next): Promise<void
 });
 
 // DELETE /api/v1/templates/locations/:id
-router.delete("/locations/:id", requireAuth, async (req, res, next): Promise<void> => {
+router.delete("/locations/:id", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     await db.update(locationTemplatesTable).set({ deletedAt: new Date(), isActive: false }).where(eq(locationTemplatesTable.id, id));
@@ -148,7 +149,7 @@ router.delete("/locations/:id", requireAuth, async (req, res, next): Promise<voi
 });
 
 // POST /api/v1/templates/locations/:id/activate
-router.post("/locations/:id/activate", requireAuth, async (req, res, next): Promise<void> => {
+router.post("/locations/:id/activate", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     const [updated] = await db.update(locationTemplatesTable).set({ isActive: true, updatedAt: new Date() }).where(eq(locationTemplatesTable.id, id)).returning();
@@ -157,7 +158,7 @@ router.post("/locations/:id/activate", requireAuth, async (req, res, next): Prom
 });
 
 // POST /api/v1/templates/locations/:id/set-marketplace-default
-router.post("/locations/:id/set-marketplace-default", requireAuth, requireMarketplace, async (req, res, next): Promise<void> => {
+router.post("/locations/:id/set-marketplace-default", requireAuth, requirePermission("admin:manage"), requireMarketplace, async (req, res, next): Promise<void> => {
   try {
     const templateId = String(req.params["id"]);
     const marketplace = req.marketplace!;
@@ -219,7 +220,7 @@ router.get("/categories", async (req, res, next): Promise<void> => {
 });
 
 // POST /api/v1/templates/categories
-router.post("/categories", requireAuth, async (req, res, next): Promise<void> => {
+router.post("/categories", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const body = CategoryTemplateSchema.safeParse(req.body);
     if (!body.success) return next(new ValidationError("Invalid input", body.error.flatten()));
@@ -239,7 +240,7 @@ router.post("/categories", requireAuth, async (req, res, next): Promise<void> =>
 });
 
 // POST /api/v1/templates/categories/:id/clone
-router.post("/categories/:id/clone", requireAuth, async (req, res, next): Promise<void> => {
+router.post("/categories/:id/clone", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     const [source] = await db.select().from(categoryTemplatesTable)
@@ -256,7 +257,7 @@ router.post("/categories/:id/clone", requireAuth, async (req, res, next): Promis
 });
 
 // PATCH /api/v1/templates/categories/:id
-router.patch("/categories/:id", requireAuth, async (req, res, next): Promise<void> => {
+router.patch("/categories/:id", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     const body = CategoryTemplateSchema.partial().safeParse(req.body);
@@ -268,7 +269,7 @@ router.patch("/categories/:id", requireAuth, async (req, res, next): Promise<voi
 });
 
 // DELETE /api/v1/templates/categories/:id
-router.delete("/categories/:id", requireAuth, async (req, res, next): Promise<void> => {
+router.delete("/categories/:id", requireAuth, requirePermission("admin:manage"), async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]);
     await db.update(categoryTemplatesTable).set({ deletedAt: new Date(), isActive: false }).where(eq(categoryTemplatesTable.id, id));
@@ -277,7 +278,7 @@ router.delete("/categories/:id", requireAuth, async (req, res, next): Promise<vo
 });
 
 // POST /api/v1/templates/categories/:id/set-marketplace-default
-router.post("/categories/:id/set-marketplace-default", requireAuth, requireMarketplace, async (req, res, next): Promise<void> => {
+router.post("/categories/:id/set-marketplace-default", requireAuth, requirePermission("admin:manage"), requireMarketplace, async (req, res, next): Promise<void> => {
   try {
     const templateId = String(req.params["id"]);
     const marketplace = req.marketplace!;

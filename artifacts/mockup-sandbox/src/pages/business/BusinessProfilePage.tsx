@@ -16,6 +16,7 @@ import {
   useRemoveSavedItem,
   useCreateClaimRequest,
   getListSavedItemsQueryKey,
+  getGetBusinessQueryKey,
 } from '@workspace/api-client-react';
 import type {
   GetBusiness200,
@@ -192,6 +193,7 @@ function BusinessActionBar({ business }: { business: BusinessDetail }) {
         params: { marketplace: MARKETPLACE_SLUG },
       });
       toast.success("Claim request submitted. We'll review it shortly.");
+      queryClient.invalidateQueries({ queryKey: getGetBusinessQueryKey(business.slug, { marketplace: MARKETPLACE_SLUG }) });
     } catch (err: any) {
       if (err?.status === 409) {
         toast.info("You've already submitted a claim request for this business.");

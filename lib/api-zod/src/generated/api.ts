@@ -1839,6 +1839,23 @@ export const AdminListBusinessesQueryParams = zod.object({
   "cursor": zod.coerce.string().optional()
 })
 
+export const AdminListBusinessesResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "status": zod.string(),
+  "claimStatus": zod.string().nullish(),
+  "verificationScore": zod.number().nullish(),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "pagination": zod.object({
+  "hasMore": zod.boolean().optional(),
+  "nextCursor": zod.string().nullish()
+}).optional()
+})
+
 
 /**
  * @summary Update business status (admin only)
@@ -1856,6 +1873,14 @@ export const AdminUpdateBusinessStatusBody = zod.object({
   "reason": zod.string().optional()
 })
 
+export const AdminUpdateBusinessStatusResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string().uuid().optional(),
+  "status": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}).optional()
+})
+
 
 /**
  * @summary Admin list of claim requests
@@ -1867,6 +1892,30 @@ export const AdminListClaimRequestsQueryParams = zod.object({
   "status": zod.coerce.string().optional(),
   "limit": zod.coerce.number().default(adminListClaimRequestsQueryLimitDefault),
   "cursor": zod.coerce.string().optional()
+})
+
+export const AdminListClaimRequestsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "evidenceUrl": zod.string().nullish(),
+  "adminNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "business": zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "slug": zod.string()
+}),
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string(),
+  "displayName": zod.string().nullish()
+})
+})),
+  "pagination": zod.object({
+  "hasMore": zod.boolean().optional(),
+  "nextCursor": zod.string().nullish()
+}).optional()
 })
 
 
@@ -1884,6 +1933,15 @@ export const AdminResolveClaimQueryParams = zod.object({
 export const AdminResolveClaimBody = zod.object({
   "status": zod.enum(['approved', 'rejected']),
   "adminNote": zod.string().optional()
+})
+
+export const AdminResolveClaimResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string().uuid().optional(),
+  "status": zod.string().optional(),
+  "adminNote": zod.string().nullish(),
+  "updatedAt": zod.coerce.date().optional()
+}).optional()
 })
 
 
@@ -2014,6 +2072,30 @@ export const AdminAnalyticsSummaryQueryParams = zod.object({
   "marketplace": zod.coerce.string()
 })
 
+export const AdminAnalyticsSummaryResponse = zod.object({
+  "marketplace": zod.object({
+  "id": zod.string().uuid().optional(),
+  "slug": zod.string().optional(),
+  "name": zod.string().optional()
+}),
+  "businesses": zod.object({
+  "total": zod.number().optional(),
+  "active": zod.number().optional()
+}),
+  "reviews": zod.object({
+  "total": zod.number().optional(),
+  "avgRating": zod.number().nullish()
+}),
+  "search": zod.object({
+  "total": zod.number().optional(),
+  "zeroResults": zod.number().optional(),
+  "zeroResultRate": zod.number().optional()
+}),
+  "engagement": zod.object({
+  "total": zod.number().optional()
+})
+})
+
 
 /**
  * @summary Get search analytics (top queries, zero-results) for a marketplace
@@ -2023,6 +2105,18 @@ export const adminAnalyticsSearchQueryDaysDefault = 30;
 export const AdminAnalyticsSearchQueryParams = zod.object({
   "marketplace": zod.coerce.string(),
   "days": zod.coerce.number().default(adminAnalyticsSearchQueryDaysDefault)
+})
+
+export const AdminAnalyticsSearchResponse = zod.object({
+  "topQueries": zod.array(zod.object({
+  "query": zod.string().optional(),
+  "count": zod.number().optional()
+})),
+  "zeroResultQueries": zod.array(zod.object({
+  "query": zod.string().optional(),
+  "count": zod.number().optional()
+})),
+  "periodDays": zod.number()
 })
 
 

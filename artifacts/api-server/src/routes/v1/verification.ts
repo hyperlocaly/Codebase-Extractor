@@ -20,7 +20,7 @@ import { JOB_TYPES } from "../../infrastructure/jobs/handlers";
 const router: IRouter = Router({ mergeParams: true });
 
 // GET /api/v1/businesses/:businessId/verifications
-router.get("/", requireMarketplace, async (req, res, next): Promise<void> => {
+router.get("/", requireAuth, requireMarketplace, async (req, res, next): Promise<void> => {
   try {
     const businessId = String(req.params["businessId"]);
     const marketplace = req.marketplace!;

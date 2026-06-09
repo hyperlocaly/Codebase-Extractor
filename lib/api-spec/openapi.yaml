@@ -2703,6 +2703,49 @@ paths:
       responses:
         "200":
           description: Paginated business list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, slug, status, createdAt]
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        status:
+                          type: string
+                        claimStatus:
+                          type: string
+                          nullable: true
+                        verificationScore:
+                          type: number
+                          format: float
+                          nullable: true
+                        publishedAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                  pagination:
+                    type: object
+                    properties:
+                      hasMore:
+                        type: boolean
+                      nextCursor:
+                        type: string
+                        nullable: true
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
@@ -2741,6 +2784,22 @@ paths:
       responses:
         "200":
           description: Business status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                      updatedAt:
+                        type: string
+                        format: date-time
 
   /v1/admin/claim-requests:
     get:
@@ -2771,6 +2830,64 @@ paths:
       responses:
         "200":
           description: Claim requests list with business + user detail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, status, createdAt, business, user]
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                          enum: [pending, approved, rejected]
+                        evidenceUrl:
+                          type: string
+                          nullable: true
+                        adminNote:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                        business:
+                          type: object
+                          required: [id, name, slug]
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            slug:
+                              type: string
+                        user:
+                          type: object
+                          required: [id, email]
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            email:
+                              type: string
+                            displayName:
+                              type: string
+                              nullable: true
+                  pagination:
+                    type: object
+                    properties:
+                      hasMore:
+                        type: boolean
+                      nextCursor:
+                        type: string
+                        nullable: true
 
   /v1/admin/claim-requests/{id}:
     patch:
@@ -2807,6 +2924,25 @@ paths:
       responses:
         "200":
           description: Claim request resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                      adminNote:
+                        type: string
+                        nullable: true
+                      updatedAt:
+                        type: string
+                        format: date-time
 
   /v1/admin/reviews:
     get:
@@ -2989,6 +3125,51 @@ paths:
       responses:
         "200":
           description: Marketplace analytics summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [marketplace, businesses, reviews, search, engagement]
+                properties:
+                  marketplace:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      slug:
+                        type: string
+                      name:
+                        type: string
+                  businesses:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      active:
+                        type: integer
+                  reviews:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      avgRating:
+                        type: number
+                        nullable: true
+                  search:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      zeroResults:
+                        type: integer
+                      zeroResultRate:
+                        type: number
+                  engagement:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
 
   /v1/admin/analytics/search:
     get:
@@ -3011,6 +3192,32 @@ paths:
       responses:
         "200":
           description: Search analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [topQueries, zeroResultQueries, periodDays]
+                properties:
+                  topQueries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        query:
+                          type: string
+                        count:
+                          type: integer
+                  zeroResultQueries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        query:
+                          type: string
+                        count:
+                          type: integer
+                  periodDays:
+                    type: integer
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "403":

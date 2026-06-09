@@ -25,9 +25,13 @@ import type {
   AddPortfolioItem201,
   AddPortfolioItemBody,
   AddPortfolioItemParams,
+  AdminAnalyticsSearch200,
   AdminAnalyticsSearchParams,
+  AdminAnalyticsSummary200,
   AdminAnalyticsSummaryParams,
+  AdminListBusinesses200,
   AdminListBusinessesParams,
+  AdminListClaimRequests200,
   AdminListClaimRequestsParams,
   AdminListReports200,
   AdminListReportsParams,
@@ -35,10 +39,12 @@ import type {
   AdminListReviewsParams,
   AdminModerateReviewBody,
   AdminModerateReviewParams,
+  AdminResolveClaim200,
   AdminResolveClaimBody,
   AdminResolveClaimParams,
   AdminResolveReportBody,
   AdminResolveReportParams,
+  AdminUpdateBusinessStatus200,
   AdminUpdateBusinessStatusBody,
   AdminUpdateBusinessStatusParams,
   AttachBusinessMediaBody,
@@ -6376,9 +6382,9 @@ export const getAdminListBusinessesUrl = (params: AdminListBusinessesParams,) =>
 /**
  * @summary Admin list of all businesses in a marketplace
  */
-export const adminListBusinesses = async (params: AdminListBusinessesParams, options?: RequestInit): Promise<void> => {
+export const adminListBusinesses = async (params: AdminListBusinessesParams, options?: RequestInit): Promise<AdminListBusinesses200> => {
 
-  return customFetch<void>(getAdminListBusinessesUrl(params),
+  return customFetch<AdminListBusinesses200>(getAdminListBusinessesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -6463,9 +6469,9 @@ export const getAdminUpdateBusinessStatusUrl = (id: string,
  */
 export const adminUpdateBusinessStatus = async (id: string,
     adminUpdateBusinessStatusBody: AdminUpdateBusinessStatusBody,
-    params: AdminUpdateBusinessStatusParams, options?: RequestInit): Promise<void> => {
+    params: AdminUpdateBusinessStatusParams, options?: RequestInit): Promise<AdminUpdateBusinessStatus200> => {
 
-  return customFetch<void>(getAdminUpdateBusinessStatusUrl(id,params),
+  return customFetch<AdminUpdateBusinessStatus200>(getAdminUpdateBusinessStatusUrl(id,params),
   {
     ...options,
     method: 'PATCH',
@@ -6541,9 +6547,9 @@ export const getAdminListClaimRequestsUrl = (params: AdminListClaimRequestsParam
 /**
  * @summary Admin list of claim requests
  */
-export const adminListClaimRequests = async (params: AdminListClaimRequestsParams, options?: RequestInit): Promise<void> => {
+export const adminListClaimRequests = async (params: AdminListClaimRequestsParams, options?: RequestInit): Promise<AdminListClaimRequests200> => {
 
-  return customFetch<void>(getAdminListClaimRequestsUrl(params),
+  return customFetch<AdminListClaimRequests200>(getAdminListClaimRequestsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -6628,9 +6634,9 @@ export const getAdminResolveClaimUrl = (id: string,
  */
 export const adminResolveClaim = async (id: string,
     adminResolveClaimBody: AdminResolveClaimBody,
-    params: AdminResolveClaimParams, options?: RequestInit): Promise<void> => {
+    params: AdminResolveClaimParams, options?: RequestInit): Promise<AdminResolveClaim200> => {
 
-  return customFetch<void>(getAdminResolveClaimUrl(id,params),
+  return customFetch<AdminResolveClaim200>(getAdminResolveClaimUrl(id,params),
   {
     ...options,
     method: 'PATCH',
@@ -7036,9 +7042,9 @@ export const getAdminAnalyticsSummaryUrl = (params: AdminAnalyticsSummaryParams,
 /**
  * @summary Get analytics summary for a marketplace
  */
-export const adminAnalyticsSummary = async (params: AdminAnalyticsSummaryParams, options?: RequestInit): Promise<void> => {
+export const adminAnalyticsSummary = async (params: AdminAnalyticsSummaryParams, options?: RequestInit): Promise<AdminAnalyticsSummary200> => {
 
-  return customFetch<void>(getAdminAnalyticsSummaryUrl(params),
+  return customFetch<AdminAnalyticsSummary200>(getAdminAnalyticsSummaryUrl(params),
   {
     ...options,
     method: 'GET'
@@ -7120,9 +7126,9 @@ export const getAdminAnalyticsSearchUrl = (params: AdminAnalyticsSearchParams,) 
 /**
  * @summary Get search analytics (top queries, zero-results) for a marketplace
  */
-export const adminAnalyticsSearch = async (params: AdminAnalyticsSearchParams, options?: RequestInit): Promise<void> => {
+export const adminAnalyticsSearch = async (params: AdminAnalyticsSearchParams, options?: RequestInit): Promise<AdminAnalyticsSearch200> => {
 
-  return customFetch<void>(getAdminAnalyticsSearchUrl(params),
+  return customFetch<AdminAnalyticsSearch200>(getAdminAnalyticsSearchUrl(params),
   {
     ...options,
     method: 'GET'

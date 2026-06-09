@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useListBusinesses } from '@workspace/api-client-react';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 import { HeroBanner } from '@/components/home/HeroBanner';
@@ -71,11 +72,20 @@ export default function HomePage() {
               </Button>
             </div>
           ) : (
-            <BusinessGrid
-              businesses={businesses}
-              isLoading={businessesLoading}
-              skeletonCount={6}
-            />
+            <>
+              <BusinessGrid
+                businesses={businesses}
+                isLoading={businessesLoading}
+                skeletonCount={6}
+              />
+              {!businessesLoading && businesses.length > 0 && (
+                <div className="mt-6 text-center">
+                  <Button variant="outline" asChild>
+                    <Link to="/directory">View all businesses →</Link>
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

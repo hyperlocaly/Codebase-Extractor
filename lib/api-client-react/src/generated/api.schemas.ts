@@ -1381,6 +1381,27 @@ limit?: number;
 cursor?: string;
 };
 
+export type AdminListBusinesses200DataItem = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  claimStatus?: string | null;
+  verificationScore?: number | null;
+  publishedAt?: string | null;
+  createdAt: string;
+};
+
+export type AdminListBusinesses200Pagination = {
+  hasMore?: boolean;
+  nextCursor?: string | null;
+};
+
+export type AdminListBusinesses200 = {
+  data: AdminListBusinesses200DataItem[];
+  pagination?: AdminListBusinesses200Pagination;
+};
+
 export type AdminUpdateBusinessStatusParams = {
 marketplace: string;
 };
@@ -1400,11 +1421,62 @@ export type AdminUpdateBusinessStatusBody = {
   reason?: string;
 };
 
+export type AdminUpdateBusinessStatus200Data = {
+  id?: string;
+  status?: string;
+  updatedAt?: string;
+};
+
+export type AdminUpdateBusinessStatus200 = {
+  data?: AdminUpdateBusinessStatus200Data;
+};
+
 export type AdminListClaimRequestsParams = {
 marketplace: string;
 status?: string;
 limit?: number;
 cursor?: string;
+};
+
+export type AdminListClaimRequests200DataItemStatus = typeof AdminListClaimRequests200DataItemStatus[keyof typeof AdminListClaimRequests200DataItemStatus];
+
+
+export const AdminListClaimRequests200DataItemStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export type AdminListClaimRequests200DataItemBusiness = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type AdminListClaimRequests200DataItemUser = {
+  id: string;
+  email: string;
+  displayName?: string | null;
+};
+
+export type AdminListClaimRequests200DataItem = {
+  id: string;
+  status: AdminListClaimRequests200DataItemStatus;
+  evidenceUrl?: string | null;
+  adminNote?: string | null;
+  createdAt: string;
+  business: AdminListClaimRequests200DataItemBusiness;
+  user: AdminListClaimRequests200DataItemUser;
+};
+
+export type AdminListClaimRequests200Pagination = {
+  hasMore?: boolean;
+  nextCursor?: string | null;
+};
+
+export type AdminListClaimRequests200 = {
+  data: AdminListClaimRequests200DataItem[];
+  pagination?: AdminListClaimRequests200Pagination;
 };
 
 export type AdminResolveClaimParams = {
@@ -1422,6 +1494,17 @@ export const AdminResolveClaimBodyStatus = {
 export type AdminResolveClaimBody = {
   status: AdminResolveClaimBodyStatus;
   adminNote?: string;
+};
+
+export type AdminResolveClaim200Data = {
+  id?: string;
+  status?: string;
+  adminNote?: string | null;
+  updatedAt?: string;
+};
+
+export type AdminResolveClaim200 = {
+  data?: AdminResolveClaim200Data;
 };
 
 export type AdminListReviewsParams = {
@@ -1497,9 +1580,59 @@ export type AdminAnalyticsSummaryParams = {
 marketplace: string;
 };
 
+export type AdminAnalyticsSummary200Marketplace = {
+  id?: string;
+  slug?: string;
+  name?: string;
+};
+
+export type AdminAnalyticsSummary200Businesses = {
+  total?: number;
+  active?: number;
+};
+
+export type AdminAnalyticsSummary200Reviews = {
+  total?: number;
+  avgRating?: number | null;
+};
+
+export type AdminAnalyticsSummary200Search = {
+  total?: number;
+  zeroResults?: number;
+  zeroResultRate?: number;
+};
+
+export type AdminAnalyticsSummary200Engagement = {
+  total?: number;
+};
+
+export type AdminAnalyticsSummary200 = {
+  marketplace: AdminAnalyticsSummary200Marketplace;
+  businesses: AdminAnalyticsSummary200Businesses;
+  reviews: AdminAnalyticsSummary200Reviews;
+  search: AdminAnalyticsSummary200Search;
+  engagement: AdminAnalyticsSummary200Engagement;
+};
+
 export type AdminAnalyticsSearchParams = {
 marketplace: string;
 days?: number;
+};
+
+export type AdminAnalyticsSearch200TopQueriesItem = {
+  query?: string;
+  count?: number;
+};
+
+export type AdminAnalyticsSearch200ZeroResultQueriesItem = {
+  query?: string;
+  count?: number;
+};
+
+export type AdminAnalyticsSearch200 = {
+  topQueries: AdminAnalyticsSearch200TopQueriesItem[];
+  zeroResultQueries: AdminAnalyticsSearch200ZeroResultQueriesItem[];
+  periodDays: number;
 };
 
 export type Readyz200 = {

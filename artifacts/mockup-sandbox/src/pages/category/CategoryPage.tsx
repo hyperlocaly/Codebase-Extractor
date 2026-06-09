@@ -135,7 +135,7 @@ export default function CategoryPage() {
               <Link to="/directory">Directory</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          {!isRoot && (
+          {category.depth === 1 && (
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
