@@ -28,6 +28,9 @@ const ServicesPage = lazy(() => import('@/pages/dashboard/ServicesPage'));
 const PortfolioPage = lazy(() => import('@/pages/dashboard/PortfolioPage'));
 const ReviewsPage = lazy(() => import('@/pages/dashboard/ReviewsPage'));
 const UpdatesPage = lazy(() => import('@/pages/dashboard/UpdatesPage'));
+const BranchesPage = lazy(() => import('@/pages/dashboard/BranchesPage'));
+const ServiceAreasPage = lazy(() => import('@/pages/dashboard/ServiceAreasPage'));
+const VerificationPage = lazy(() => import('@/pages/dashboard/VerificationPage'));
 const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage'));
 
 function PageLoader() {
@@ -168,33 +171,15 @@ export const router = createBrowserRouter(
             },
             {
               path: '/dashboard/branches',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Branches — coming in Sprint 8
-                  </p>
-                </div>
-              ),
+              element: withSuspense(BranchesPage),
             },
             {
               path: '/dashboard/service-areas',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Service areas — coming in Sprint 8
-                  </p>
-                </div>
-              ),
+              element: withSuspense(ServiceAreasPage),
             },
             {
               path: '/dashboard/verification',
-              element: (
-                <div className="flex min-h-[60vh] items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Verification — coming in Sprint 8
-                  </p>
-                </div>
-              ),
+              element: withSuspense(VerificationPage),
             },
           ],
         },
