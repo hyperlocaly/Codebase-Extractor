@@ -25,6 +25,31 @@ if (!config.email.smtpHost) {
   logger.warn("SMTP not configured — email delivery is disabled. Set SMTP_HOST to enable.");
 }
 
+/**
+ * Ensure pg_trgm is installed before the server begins accepting search
+ * requests.  post-merge.sh runs this via `pnpm --filter @workspace/db
+ * run setup:extensions`, but that script may not have executed on a fresh
+ * database (e.g. first boot, CI, new developer machine).  Running
+ * CREATE EXTENSION IF NOT EXISTS here is idempotent and safe.
+ */
+async function ensurePgTrgm(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
+    logger.info("pg_trgm extension ready");
+  } catch (err) {
+    // Non-fatal: some managed Postgres instances restrict extension creation
+    // to superusers.  Search will fall back to ILIKE-only matching.
+    logger.warn(
+      { err },
+      "pg_trgm setup failed — similarity search may be degraded. " +
+        "Run: CREATE EXTENSION IF NOT EXISTS pg_trgm; as a superuser.",
+    );
+  } finally {
+    client.release();
+  }
+}
+
 const server = app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -32,10 +57,20 @@ const server = app.listen(port, (err) => {
   }
   logger.info({ port }, "Server listening");
 
-  // Start background workers and scheduler after server is up
-  startOutboxWorker();
-  startJobWorker();
-  startScheduler();
+  // Ensure search extension is present before workers start processing events
+  // that might trigger search-sync jobs.
+  ensurePgTrgm().then(() => {
+    startOutboxWorker();
+    startJobWorker();
+    startScheduler();
+  }).catch((startupErr) => {
+    // ensurePgTrgm itself never throws (errors are caught internally), but
+    // guard here to prevent a silent hang if something unexpected occurs.
+    logger.error({ err: startupErr }, "Startup error during pg_trgm check");
+    startOutboxWorker();
+    startJobWorker();
+    startScheduler();
+  });
 });
 
 async function shutdown(signal: string): Promise<void> {

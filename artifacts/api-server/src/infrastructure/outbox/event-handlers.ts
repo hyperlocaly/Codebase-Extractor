@@ -41,25 +41,23 @@ async function createNotification(
   actionUrl?: string,
 ): Promise<void> {
   try {
-    await db.insert(notificationsTable).values({
-      userId,
-      type,
-      title,
-      body,
-      channel: "in_app",
-      status: "pending",
-      entityType: entityType ?? null,
-      entityId: entityId ?? null,
-      actionUrl: actionUrl ?? null,
-    });
-
-    // Enqueue email dispatch job for the notification
+    // Use RETURNING to get the exact inserted row's id — avoids a separate
+    // SELECT that previously ordered ASC (oldest-first) and dispatched the
+    // wrong notification when a user had existing notifications.
     const [notification] = await db
-      .select({ id: notificationsTable.id })
-      .from(notificationsTable)
-      .where(eq(notificationsTable.userId, userId))
-      .orderBy(notificationsTable.createdAt)
-      .limit(1);
+      .insert(notificationsTable)
+      .values({
+        userId,
+        type,
+        title,
+        body,
+        channel: "in_app",
+        status: "pending",
+        entityType: entityType ?? null,
+        entityId: entityId ?? null,
+        actionUrl: actionUrl ?? null,
+      })
+      .returning({ id: notificationsTable.id });
 
     if (notification) {
       await enqueueJob(JOB_TYPES.NOTIFICATION_DISPATCH, { notificationId: notification.id }, { priority: 6 });

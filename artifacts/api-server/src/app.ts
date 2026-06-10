@@ -2,7 +2,7 @@ import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import rateLimit from "express-rate-limit";
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -117,15 +117,46 @@ const healthResponse = (_req: Request, res: Response) => {
 app.get("/health", healthResponse);
 app.get("/healthz", healthResponse);
 
+/**
+ * Readiness probe — returns 200 when the service can serve traffic.
+ *
+ * Included:
+ *   • db         — Postgres connectivity (hard dependency; 503 on failure).
+ *   • search     — pg_trgm presence (informational; service still runs without
+ *                  it but similarity search falls back to error).
+ *
+ * Excluded intentionally:
+ *   • SMTP / email — SMTP being down does NOT make this service unready.
+ *     All API endpoints respond normally; notifications queue as
+ *     status="pending" and are retried when SMTP recovers.  Returning 503 on
+ *     SMTP failure would cause orchestrators to restart the process, which
+ *     cannot fix SMTP and creates a restart loop.
+ *     Observable via: startup log "SMTP not configured" + notifications
+ *     rows with status="failed" / last_error populated after dispatch attempts.
+ */
 const readinessResponse = async (_req: Request, res: Response) => {
-  const emailStatus = config.email.smtpHost ? "configured" : "unconfigured";
   try {
-    await db.execute(sql`SELECT 1`);
-    res.status(200).json({ status: "ready", db: "ok", email: emailStatus, timestamp: new Date().toISOString() });
+    // Use the raw pool so we can issue two queries in one connection.
+    const client = await pool.connect();
+    try {
+      await client.query("SELECT 1");
+      const { rows } = await client.query(
+        "SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm'",
+      );
+      const trgmReady = rows.length > 0;
+      res.status(200).json({
+        status: "ready",
+        db: "ok",
+        search: { pg_trgm: trgmReady ? "ready" : "unavailable" },
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      client.release();
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err: msg }, "Readiness check failed");
-    res.status(503).json({ status: "not_ready", db: "error", email: emailStatus, timestamp: new Date().toISOString() });
+    res.status(503).json({ status: "not_ready", db: "error", timestamp: new Date().toISOString() });
   }
 };
 
