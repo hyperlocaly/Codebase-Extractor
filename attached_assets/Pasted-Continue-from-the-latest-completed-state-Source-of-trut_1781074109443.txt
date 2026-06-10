@@ -1,0 +1,120 @@
+Continue from the latest completed state.
+
+Source of truth:
+
+Bucket B Blockers 1–3 are COMPLETE and VERIFIED.
+
+Completed:
+
+* Search infrastructure (pg_trgm, indexes, setup script)
+* Forgot password flow
+* Reset password flow
+* Verification email sending
+* UserRegistered event publication
+* OpenAPI updates
+* Codegen regeneration
+* Seed fixes
+* End-to-end verification
+
+Do NOT revisit completed work.
+
+Do NOT suggest improvements.
+
+Do NOT suggest future features.
+
+Do NOT implement anything until a full audit is completed.
+
+Your task now is:
+
+BUCKET B — BLOCKERS 4–7 ONLY
+
+Blocker 4 — Media Infrastructure
+Blocker 5 — Production Deployment Readiness
+Blocker 6 — Security Readiness
+Blocker 7 — Data Integrity
+
+PHASE 1 — AUDIT ONLY
+
+Perform a complete codebase audit of Blockers 4–7.
+
+For every blocker:
+
+1. List all relevant files.
+2. Identify current implementation.
+3. Identify missing implementation.
+4. Identify partial implementation.
+5. Identify production risks.
+6. Identify security risks.
+7. Identify deployment risks.
+8. Identify launch blockers.
+9. Assign completion percentage.
+
+Output format:
+
+BLOCKER 4 — Media Infrastructure
+✅ Complete
+⚠️ Partial
+❌ Missing
+Production Risks
+Completion %
+
+BLOCKER 5 — Production Deployment Readiness
+✅ Complete
+⚠️ Partial
+❌ Missing
+Production Risks
+Completion %
+
+BLOCKER 6 — Security Readiness
+✅ Complete
+⚠️ Partial
+❌ Missing
+Security Risks
+Completion %
+
+BLOCKER 7 — Data Integrity
+✅ Complete
+⚠️ Partial
+❌ Missing
+Data Risks
+Completion %
+
+Then produce:
+
+Priority Order
+P0 Critical
+P1 High
+P2 Medium
+P3 Low
+
+Then produce:
+
+Phase Plan
+Phase D
+Phase E
+Phase F
+Phase G
+
+Then produce:
+
+Updated Platform Completion %
+Updated Launch Readiness %
+Updated Production Readiness %
+
+IMPORTANT:
+
+Do NOT implement anything.
+
+Do NOT modify code.
+
+Do NOT generate fixes.
+
+Do NOT run migrations.
+
+Do NOT create new files.
+
+Audit only.
+
+The audit must be evidence-based from actual code reads.
+
+When the audit is complete, stop and wait for implementation approval.
