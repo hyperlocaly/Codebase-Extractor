@@ -1,0 +1,186 @@
+Planning database schema exploration (4 seconds)
+Executing Phase A immediately. Reading all relevant files in parallel before writing.
+
+
+5 actions
+Reading all files needed in parallel before any writes.
+
+
+7 actions
+Good. Need to read admin-user seed, BusinessProfilePage review section, and DB user schema. Parallel reads.
+
+
+5 actions
+The admin seed script already exists and is complete. Just needs running. Now reading BusinessTabs to find the review wiring point, then I'll execute all changes in parallel.
+
+
+3 actions
+BusinessTabs.tsx already imports useDeleteReview and wires onDeleteRequest! Let me verify the complete implementation and fix the bcryptjs missing package issue in parallel.
+
+
+4 actions
+BusinessTabs.tsx already has delete review fully wired — useDeleteReview, ConfirmDeleteDialog, handleConfirmDelete, and onDeleteRequest all in place. The Sprint 9 audit was checking the wrong file. Sprint 9 delete own review = ✅ already done.
+
+Now: bcryptjs is listed in scripts/package.json but not physically installed. Fix that, run the seed, then do currencyId fixes.
+
+
+4 actions
+All Phase A items 2, 3, 4 are already implemented in the codebase. Running the admin seed now that bcryptjs is installed.
+
+
+2 actions
+The DB is fresh — need to run the full seed chain in order. Running seed:all.
+
+
+2 actions
+All seeds completed. Admin user created: admin@fashion-nigeria.com / Admin1234! with marketplace_admin role on fashion-nigeria.
+
+Phase A complete. Moving immediately to Phase B. Reading all three admin pages in parallel.
+
+
+4 actions
+Now I have all three pages fully read. Checking what API params useAdminListReviews accepts before implementing.
+
+
+11 actions
+The API has a q search param already. Let me check the backend to confirm what it searches, then implement all three Phase B changes simultaneously.
+
+
+3 actions
+I have everything I need. Now implementing all three Phase B changes simultaneously.
+
+
+2 actions
+Now writing AdminClaimsPage (Dialog→Sheet) and AdminBusinessesPage (DropdownMenu→Tabs) simultaneously.
+
+
+3 actions
+Phase B writes complete. Running typecheck now.
+
+
+4 actions
+Typecheck clean. Moving immediately to Phase C — growth trends. Reading backend analytics route, OpenAPI spec, and AdminAnalyticsPage simultaneously.
+
+
+4 actions
+The OpenAPI spec has no growth/trends endpoint — only summary and search. I need to add it. Reading the backend analytics handler and DB schema to understand what data is available.
+
+
+3 actions
+Reading the admin backend handler and DB schema to understand growth data sources.
+
+
+4 actions
+I have everything. Now implementing Phase C: add growth endpoint to OpenAPI spec, implement backend handler, run codegen, then wire the frontend. All parallel writes where possible.
+
+
+3 actions
+Adding the growth endpoint to the OpenAPI spec immediately after the search analytics block.
+
+
+2 actions
+Adding the backend growth handler to admin.ts and running codegen simultaneously.
+
+
+3 actions
+Codegen succeeded. Adding the growth backend handler to admin.ts now.
+
+
+2 actions
+Now wiring the generated hook in AdminAnalyticsPage. Verifying the hook name from codegen first.
+
+
+2 actions
+Hook exists: useAdminAnalyticsGrowth. Now rewriting AdminAnalyticsPage to wire the real growth data.
+
+
+2 actions
+Running full typecheck across backend and frontend simultaneously.
+
+
+3 actions
+Both typechecks clean. Restarting both services to pick up all changes.
+
+
+2 actions
+Both services running. Verifying the API health and growth endpoint, and checking logs simultaneously.
+
+
+3 actions
+API server running clean. Verifying the growth endpoint end-to-end by logging in as admin and calling it.
+
+
+3 actions
+Full typecheck 100% clean across all packages. Let me verify admin login works correctly.
+
+
+2 actions
+Admin login works. Testing the growth endpoint with the real token.
+
+
+2 actions
+Growth endpoint live and responding correctly (returns data: [] as expected — no businesses yet in fresh DB). All phases complete. Producing final report.
+
+Final Implementation Report
+Work Completed
+Phase A — Pre-conditions & Functional Gaps
+
+#	Item	Outcome	Evidence
+1	Admin seed user	✅ Seeded	bcryptjs installed; full seed chain run; login verified: admin@fashion-nigeria.com / Admin1234! returns JWT with marketplace_admin role
+2	Delete own review	✅ Pre-existing	Wired in BusinessTabs.tsx (not BusinessProfilePage) — useDeleteReview + ConfirmDeleteDialog + onDeleteRequest all fully implemented
+3	Products currencyId	✅ Pre-existing	ProductsPage.tsx line 268: currencyId: currencyId ?? undefined via useMarketplace()
+4	Services currencyId	✅ Pre-existing	ServicesPage.tsx line 285: same pattern
+Phase B — Admin Panel Pattern Gaps
+
+#	Item	Outcome	Files Changed
+5	AdminReviewsPage business search	✅ Implemented	Debounced Input with Search icon; passes q param to useAdminListReviews; empty state shows query text
+6	AdminClaimsPage ClaimReviewSheet	✅ Implemented	Dialog → Sheet (side=right); shows business + user summary; admin note Textarea; Approve/Reject in SheetFooter
+7	AdminBusinessesPage filter tabs	✅ Implemented	DropdownMenu → Shadcn Tabs with All / Draft / Active / Suspended / Archived
+Phase C — Growth Trends
+
+#	Item	Outcome	Files Changed
+8a	OpenAPI spec — /v1/admin/analytics/growth	✅ Added	lib/api-spec/openapi.yaml — new GET endpoint, returns data[]{date,businesses,reviews} + periodDays
+8b	Backend handler	✅ Implemented	artifacts/api-server/src/routes/v1/admin.ts — SQL date_trunc('day',...) group-by for businesses and reviews over period
+8c	Codegen	✅ Run	useAdminAnalyticsGrowth hook generated in lib/api-client-react/src/generated/api.ts
+8d	Frontend AreaChart	✅ Wired	AdminAnalyticsPage.tsx — dual Area series (Businesses + Reviews); shared period filter; proper empty state when no data
+Files Changed
+lib/api-spec/openapi.yaml                             — added /v1/admin/analytics/growth endpoint
+artifacts/api-server/src/routes/v1/admin.ts           — growth analytics handler
+lib/api-client-react/src/generated/api.ts             — codegen output (useAdminAnalyticsGrowth)
+lib/api-zod/src/generated/fashionNigeria.zod.ts       — codegen output
+artifacts/mockup-sandbox/src/pages/admin/AdminReviewsPage.tsx      — business search input
+artifacts/mockup-sandbox/src/pages/admin/AdminClaimsPage.tsx       — Dialog → Sheet
+artifacts/mockup-sandbox/src/pages/admin/AdminBusinessesPage.tsx   — DropdownMenu → Tabs
+artifacts/mockup-sandbox/src/pages/admin/AdminAnalyticsPage.tsx    — growth AreaChart wired
+
+Typecheck Results
+pnpm run typecheck:libs           ✅ PASS
+pnpm run typecheck (full):
+  ├── artifacts/api-server        ✅ PASS
+  ├── artifacts/mockup-sandbox    ✅ PASS
+  └── scripts                     ✅ PASS
+
+Build Results
+API server: built and started (esbuild 239ms), listening on port 8080 ✅
+Frontend: Vite dev server running ✅
+Verification Results
+GET /api/v1/readyz                          → {"status":"ready","db":"ok"} ✅
+POST /api/v1/auth/login (admin)             → JWT issued, emailVerified:true ✅
+GET /api/v1/admin/analytics/growth?days=30  → {"data":{"data":[],"periodDays":30}} ✅
+
+Sprint Completion (Final)
+Sprint	Scope	Completion
+Sprint 7 — Products / Services / Updates	currencyId ×2 ✅ (pre-existing); Sheet forms ✅; undo toast ✅; ConfirmDeleteDialog ✅	100%
+Sprint 8 — Portfolio / Media / Branches / Verification	All features ✅; LocationCascade excluded per scope	100%
+Sprint 9 — Reviews / Saved Items / Notifications	Delete own review ✅ (pre-existing in BusinessTabs); all other features ✅	100%
+Sprint 10 — Admin Panel	Admin seed ✅; business search ✅; ClaimReviewSheet ✅; filter tabs ✅; growth AreaChart ✅	100%
+Overall Sprint 7–10		100%
+Remaining Blockers (Out of Scope — Backend Gaps)
+These were in the original replit.md Backend Gaps list and were not part of the audited roadmap:
+
+pg_trgm extension — GET /businesses?q= returns HTTP 500; install with CREATE EXTENSION IF NOT EXISTS pg_trgm;
+UserRegistered event not published — email verification emails never sent
+No forgot-password / reset-password endpoints — auth flow incomplete
+Media upload URL is a placeholder — real object storage not wired
+No seeded business data — growth chart will show empty state until real businesses and reviews exist (correct behaviour; endpoint working)
+Next, I can install the pg_trgm extension and fix the search endpoint so that GET /businesses?q= works without returning a 500 error. Would you like me to do that?
