@@ -2,8 +2,10 @@ import { useState } from 'react';
 import {
   useAdminAnalyticsSummary,
   useAdminAnalyticsSearch,
+  useAdminAnalyticsGrowth,
   getAdminAnalyticsSummaryQueryKey,
   getAdminAnalyticsSearchQueryKey,
+  getAdminAnalyticsGrowthQueryKey,
 } from '@workspace/api-client-react';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +37,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -52,17 +55,29 @@ type SearchAnalytics = {
   periodDays: number;
 };
 
+type GrowthDataPoint = {
+  date: string;
+  businesses: number;
+  reviews: number;
+};
+
 const PERIOD_OPTIONS = [
   { label: 'Last 7 days', value: 7 },
   { label: 'Last 30 days', value: 30 },
   { label: 'Last 90 days', value: 90 },
 ];
 
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' });
+}
+
 export default function AdminAnalyticsPage() {
   const [periodDays, setPeriodDays] = useState(30);
 
   const summaryParams = { marketplace: MARKETPLACE_SLUG };
   const searchParams = { marketplace: MARKETPLACE_SLUG, days: periodDays };
+  const growthParams = { marketplace: MARKETPLACE_SLUG, days: periodDays };
 
   const {
     data: summaryData,
@@ -82,8 +97,24 @@ export default function AdminAnalyticsPage() {
     query: { queryKey: getAdminAnalyticsSearchQueryKey(searchParams) },
   });
 
+  const {
+    data: growthData,
+    isLoading: growthLoading,
+    isError: growthError,
+    refetch: refetchGrowth,
+  } = useAdminAnalyticsGrowth(growthParams, {
+    query: { queryKey: getAdminAnalyticsGrowthQueryKey(growthParams) },
+  });
+
   const summary = (summaryData as any) as AnalyticsSummary | undefined;
   const searchAnalytics = (searchData as any) as SearchAnalytics | undefined;
+  const growthPoints = ((growthData as any)?.data ?? []) as GrowthDataPoint[];
+  const hasGrowthData = growthPoints.length > 0;
+
+  const chartData = growthPoints.map((p) => ({
+    ...p,
+    date: formatDateLabel(p.date),
+  }));
 
   const summaryCards = summary
     ? [
@@ -158,60 +189,8 @@ export default function AdminAnalyticsPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Growth Trends</h2>
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-semibold">Business &amp; Review Activity</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {summaryError ? (
-              <div className="flex h-44 items-center justify-center">
-                <p className="text-sm text-muted-foreground">Error loading data.</p>
-              </div>
-            ) : summaryLoading ? (
-              <Skeleton className="h-44 w-full rounded-lg" />
-            ) : (
-              <div className="relative">
-                <ResponsiveContainer width="100%" height={176}>
-                  <AreaChart data={[]} margin={{ top: 8, right: 16, bottom: 0, left: -10 }}>
-                    <defs>
-                      <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Area
-                      type="monotone"
-                      dataKey="count"
-                      stroke="hsl(var(--primary))"
-                      fill="url(#colorBiz)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80">
-                  <TrendingUp className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">Historical growth data not yet available.</p>
-                  <p className="text-xs text-muted-foreground/60">
-                    Data collection begins once your marketplace goes live.
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Search Insights</h2>
+          <h2 className="text-lg font-semibold">Growth Trends</h2>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
@@ -232,6 +211,97 @@ export default function AdminAnalyticsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold">Business &amp; Review Activity</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {growthError ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <AlertCircle className="h-7 w-7 text-destructive/60" />
+                <p className="text-sm text-muted-foreground">Failed to load growth data.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchGrowth()}>
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  Try again
+                </Button>
+              </div>
+            ) : growthLoading ? (
+              <Skeleton className="h-52 w-full rounded-lg" />
+            ) : !hasGrowthData ? (
+              <div className="flex h-52 flex-col items-center justify-center gap-2 text-center">
+                <TrendingUp className="h-8 w-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">No activity recorded in the last {periodDays} days.</p>
+                <p className="text-xs text-muted-foreground/60">Data appears here once businesses or reviews are added.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={208}>
+                <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: -10 }}>
+                  <defs>
+                    <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorReviews" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--chart-2, 217 91% 60%))" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="hsl(var(--chart-2, 217 91% 60%))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      value.toLocaleString(),
+                      name === 'businesses' ? 'Businesses' : 'Reviews',
+                    ]}
+                    labelStyle={{ fontSize: 11 }}
+                    itemStyle={{ fontSize: 11 }}
+                  />
+                  <Legend
+                    formatter={(v) => v === 'businesses' ? 'Businesses' : 'Reviews'}
+                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="businesses"
+                    stroke="hsl(var(--primary))"
+                    fill="url(#colorBiz)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="reviews"
+                    stroke="hsl(217, 91%, 60%)"
+                    fill="url(#colorReviews)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Search Insights</h2>
 
         {searchError ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed bg-muted/20 px-6 py-10 text-center">

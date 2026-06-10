@@ -6,9 +6,10 @@ import {
   useAdminResolveReport,
   AdminModerateReviewBodyModerationStatus,
 } from '@workspace/api-client-react';
-import { ShieldAlert, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle2, XCircle, ChevronDown } from 'lucide-react';
+import { ShieldAlert, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle2, XCircle, ChevronDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
@@ -192,17 +193,28 @@ function ReportCard({ report, onRefetch }: { report: any; onRefetch: () => void 
 
 export default function AdminReviewsPage() {
   const [modStatus, setModStatus] = useState<string | undefined>(undefined);
+  const [searchQ, setSearchQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+
+  function handleSearchChange(value: string) {
+    setSearchQ(value);
+    const timer = setTimeout(() => setDebouncedQ(value), 400);
+    return () => clearTimeout(timer);
+  }
+
+  const reviewParams = {
+    marketplace: MARKETPLACE_SLUG,
+    moderationStatus: modStatus,
+    limit: 50,
+    ...(debouncedQ ? { q: debouncedQ } : {}),
+  };
 
   const {
     data: reviewsData,
     isLoading: reviewsLoading,
     isError: reviewsError,
     refetch: refetchReviews,
-  } = useAdminListReviews({
-    marketplace: MARKETPLACE_SLUG,
-    moderationStatus: modStatus,
-    limit: 50,
-  });
+  } = useAdminListReviews(reviewParams);
 
   const {
     data: reportsData,
@@ -240,10 +252,19 @@ export default function AdminReviewsPage() {
         </TabsList>
 
         <TabsContent value="reviews" className="mt-4 space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQ}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search by business name or reviewer…"
+                className="pl-9"
+              />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs shrink-0">
                   {modStatus === 'removed' ? 'Hidden only'
                     : modStatus === 'flagged' ? 'Flagged only'
                     : modStatus === 'auto_approved' ? 'Approved only'
@@ -251,7 +272,7 @@ export default function AdminReviewsPage() {
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setModStatus(undefined)}>All statuses</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setModStatus('auto_approved')}>Approved only</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setModStatus('flagged')}>Flagged only</DropdownMenuItem>
@@ -278,7 +299,9 @@ export default function AdminReviewsPage() {
           ) : reviews.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed py-12 text-center">
               <ShieldAlert className="h-8 w-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">No reviews to moderate.</p>
+              <p className="text-sm text-muted-foreground">
+                {debouncedQ ? `No reviews found matching "${debouncedQ}".` : 'No reviews to moderate.'}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">

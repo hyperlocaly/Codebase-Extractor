@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useAdminListBusinesses,
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,13 +49,13 @@ type AdminBusiness = {
   createdAt: string;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  all: 'All statuses',
-  draft: 'Draft',
-  active: 'Active',
-  suspended: 'Suspended',
-  archived: 'Archived',
-};
+const STATUS_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'archived', label: 'Archived' },
+];
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   active: 'default',
@@ -145,8 +145,8 @@ export default function AdminBusinessesPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+      <div className="space-y-3">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchQ}
@@ -155,25 +155,16 @@ export default function AdminBusinessesPage() {
             className="pl-9"
           />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              {STATUS_LABELS[statusFilter]}
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {Object.entries(STATUS_LABELS).map(([val, label]) => (
-              <DropdownMenuItem
-                key={val}
-                onClick={() => setStatusFilter(val)}
-                className={statusFilter === val ? 'font-medium text-primary' : ''}
-              >
-                {label}
-              </DropdownMenuItem>
+
+        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+          <TabsList className="w-full sm:w-auto">
+            {STATUS_TABS.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="flex-1 sm:flex-none">
+                {tab.label}
+              </TabsTrigger>
             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </TabsList>
+        </Tabs>
       </div>
 
       {isError ? (

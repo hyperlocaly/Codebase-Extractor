@@ -1,0 +1,118 @@
+Use your last audit as the source of truth.
+
+Do NOT audit again.
+
+Do NOT suggest new features.
+
+Do NOT work on improvements, UX enhancements, refactors, drag-and-drop, DataTable migrations, LocationCascade extraction, or any item not listed in the remaining backlog.
+
+Execute only the remaining audited roadmap gaps in priority order.
+
+Priority Order
+
+PHASE A (P0 + P1)
+
+1. Admin seed user
+
+   * Create marketplace_admin seed user
+   * Wire into seed scripts
+   * Verify login works
+
+2. Delete own review
+
+   * Fix ReviewList → BusinessProfilePage integration
+   * Wire useDeleteReview
+   * Implement optimistic removal
+   * Invalidate review summary correctly
+
+3. Products currencyId
+
+   * Fetch marketplace currencyId
+   * Pass currencyId on create/update
+
+4. Services currencyId
+
+   * Fetch marketplace currencyId
+   * Pass currencyId on create/update
+
+After implementation:
+
+* Typecheck
+* Build
+* Verify
+* Update sprint percentages
+
+Then continue immediately to:
+
+PHASE B
+
+5. AdminReviewsPage business search
+
+   * Implement business search/filter workflow
+   * Verify moderation still works
+
+6. AdminClaimsPage ClaimReviewSheet
+
+   * Replace Dialog implementation with Sheet implementation
+   * Preserve all functionality
+
+7. AdminBusinessesPage status filter tabs
+
+   * Replace DropdownMenu status filter with Tabs
+   * Preserve all functionality
+
+After implementation:
+
+* Typecheck
+* Build
+* Verify
+* Update sprint percentages
+
+Then evaluate:
+
+PHASE C
+
+8. Growth trends endpoint
+
+   * Verify whether roadmap requires real backend data
+   * If backend support is missing, implement it
+   * Wire AreaChart to real data
+   * Verify chart renders correctly
+
+After implementation:
+
+* Typecheck
+* Build
+* Verify
+
+STOP ONLY WHEN:
+
+Sprint 7 = 100%
+Sprint 8 = 100%
+Sprint 9 = 100%
+Sprint 10 = 100%
+
+Ignore all future enhancement suggestions.
+Ignore drag-and-drop.
+Ignore DataTable refactors.
+Ignore LocationCascade extraction.
+Ignore UX polish tasks.
+Ignore optimization ideas.
+
+Final report must contain:
+
+* Completed items
+* Evidence of implementation
+* Files changed
+* Typecheck results
+* Build results
+* Verification results
+* Sprint 7 percentage
+* Sprint 8 percentage
+* Sprint 9 percentage
+* Sprint 10 percentage
+* Overall completion percentage
+* Remaining blockers (if any)
+
+Do not stop between phases.
+Continue automatically until all audited roadmap gaps are resolved or a blocker is proven with evidence.

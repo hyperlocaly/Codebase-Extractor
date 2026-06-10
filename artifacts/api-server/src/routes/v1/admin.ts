@@ -604,4 +604,74 @@ router.get(
   },
 );
 
+router.get(
+  "/analytics/growth",
+  requireAuth,
+  requireMarketplace,
+  requirePermission("analytics:read:marketplace"),
+  async (req, res, next): Promise<void> => {
+    try {
+      const marketplace = req.marketplace!;
+      const { days: rawDays } = req.query as { days?: string };
+      const days = Math.min(Math.max(Number(rawDays ?? 30), 1), 90);
+      const since = new Date(Date.now() - days * 86_400_000);
+
+      const bizRows = await db
+        .select({
+          date: sql<string>`date_trunc('day', ${businessesTable.createdAt})::date::text`,
+          count: count(businessesTable.id),
+        })
+        .from(businessesTable)
+        .where(
+          and(
+            eq(businessesTable.marketplaceId, marketplace.id),
+            gte(businessesTable.createdAt, since),
+            isNull(businessesTable.deletedAt),
+          ),
+        )
+        .groupBy(sql`date_trunc('day', ${businessesTable.createdAt})`)
+        .orderBy(sql`date_trunc('day', ${businessesTable.createdAt})`);
+
+      const reviewRows = await db
+        .select({
+          date: sql<string>`date_trunc('day', ${reviewsTable.createdAt})::date::text`,
+          count: count(reviewsTable.id),
+        })
+        .from(reviewsTable)
+        .where(
+          and(
+            eq(reviewsTable.marketplaceId, marketplace.id),
+            gte(reviewsTable.createdAt, since),
+            isNull(reviewsTable.deletedAt),
+          ),
+        )
+        .groupBy(sql`date_trunc('day', ${reviewsTable.createdAt})`)
+        .orderBy(sql`date_trunc('day', ${reviewsTable.createdAt})`);
+
+      const dateMap = new Map<string, { businesses: number; reviews: number }>();
+
+      for (const row of bizRows) {
+        const key = row.date;
+        const entry = dateMap.get(key) ?? { businesses: 0, reviews: 0 };
+        entry.businesses = Number(row.count);
+        dateMap.set(key, entry);
+      }
+      for (const row of reviewRows) {
+        const key = row.date;
+        const entry = dateMap.get(key) ?? { businesses: 0, reviews: 0 };
+        entry.reviews = Number(row.count);
+        dateMap.set(key, entry);
+      }
+
+      const data = Array.from(dateMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, counts]) => ({ date, ...counts }));
+
+      sendSuccess(res, { data, periodDays: days });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 export default router;

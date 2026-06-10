@@ -2129,6 +2129,26 @@ export const AdminAnalyticsSearchResponse = zod.object({
 
 
 /**
+ * @summary Get daily growth trends (businesses registered, reviews submitted) for a marketplace
+ */
+export const adminAnalyticsGrowthQueryDaysDefault = 30;
+
+export const AdminAnalyticsGrowthQueryParams = zod.object({
+  "marketplace": zod.coerce.string(),
+  "days": zod.coerce.number().default(adminAnalyticsGrowthQueryDaysDefault)
+})
+
+export const AdminAnalyticsGrowthResponse = zod.object({
+  "data": zod.array(zod.object({
+  "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
+  "businesses": zod.number(),
+  "reviews": zod.number()
+})),
+  "periodDays": zod.number()
+})
+
+
+/**
  * @summary Readiness probe — checks DB connectivity
  */
 export const ReadyzResponse = zod.object({

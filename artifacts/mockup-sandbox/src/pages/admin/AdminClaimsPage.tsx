@@ -17,13 +17,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import {
   ClipboardList,
   CheckCircle2,
@@ -260,44 +260,63 @@ export default function AdminClaimsPage() {
         </div>
       )}
 
-      <Dialog open={!!resolveTarget} onOpenChange={(o) => !o && setResolveTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+      <Sheet open={!!resolveTarget} onOpenChange={(o) => !o && setResolveTarget(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col gap-0 p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b">
+            <SheetTitle>
               {resolveTarget?.action === 'approved' ? 'Approve' : 'Reject'} claim request?
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {resolveTarget?.action === 'approved'
                 ? `Approving this claim will grant ${resolveTarget.claim.user.displayName ?? resolveTarget.claim.user.email} ownership of ${resolveTarget.claim.business.name} and set it to active.`
                 : `Rejecting this claim will notify ${resolveTarget?.claim.user.displayName ?? resolveTarget?.claim.user.email} that their request was denied.`}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Admin note{resolveTarget?.action === 'rejected' ? ' (optional — shown to claimant)' : ' (optional)'}
-            </label>
-            <Textarea
-              value={adminNote}
-              onChange={(e) => setAdminNote(e.target.value)}
-              placeholder="Add a note for your records or the claimant…"
-              rows={3}
-              maxLength={1000}
-            />
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium">{resolveTarget?.claim.business.name}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <User className="h-3 w-3" />
+                <span>{resolveTarget?.claim.user.displayName ?? resolveTarget?.claim.user.email}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Admin note{resolveTarget?.action === 'rejected' ? ' (optional — shown to claimant)' : ' (optional)'}
+              </label>
+              <Textarea
+                value={adminNote}
+                onChange={(e) => setAdminNote(e.target.value)}
+                placeholder="Add a note for your records or the claimant…"
+                rows={4}
+                maxLength={1000}
+              />
+            </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveTarget(null)} disabled={isResolving}>
+          <SheetFooter className="px-6 py-4 border-t flex-row gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setResolveTarget(null)}
+              disabled={isResolving}
+              className="flex-1 sm:flex-none"
+            >
               Cancel
             </Button>
             <Button
               onClick={executeResolve}
               disabled={isResolving}
-              className={
+              className={[
+                'flex-1 sm:flex-none',
                 resolveTarget?.action === 'approved'
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  : 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
-              }
+                  : 'bg-destructive hover:bg-destructive/90 text-destructive-foreground',
+              ].join(' ')}
             >
               {isResolving ? (
                 <>
@@ -310,9 +329,9 @@ export default function AdminClaimsPage() {
                 'Reject claim'
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

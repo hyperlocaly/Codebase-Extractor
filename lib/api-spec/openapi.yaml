@@ -3253,6 +3253,53 @@ paths:
         "403":
           $ref: "#/components/responses/ForbiddenError"
 
+  /v1/admin/analytics/growth:
+    get:
+      operationId: adminAnalyticsGrowth
+      tags: [admin]
+      summary: Get daily growth trends (businesses registered, reviews submitted) for a marketplace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: marketplace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Daily growth data series
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, periodDays]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [date, businesses, reviews]
+                      properties:
+                        date:
+                          type: string
+                          description: ISO date string (YYYY-MM-DD)
+                        businesses:
+                          type: integer
+                        reviews:
+                          type: integer
+                  periodDays:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
   /v1/readyz:
     get:
       operationId: readyz

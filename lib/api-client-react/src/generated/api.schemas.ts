@@ -1654,6 +1654,23 @@ export type AdminAnalyticsSearch200 = {
   periodDays: number;
 };
 
+export type AdminAnalyticsGrowthParams = {
+marketplace: string;
+days?: number;
+};
+
+export type AdminAnalyticsGrowth200DataItem = {
+  /** ISO date string (YYYY-MM-DD) */
+  date: string;
+  businesses: number;
+  reviews: number;
+};
+
+export type AdminAnalyticsGrowth200 = {
+  data: AdminAnalyticsGrowth200DataItem[];
+  periodDays: number;
+};
+
 export type Readyz200 = {
   status?: string;
   db?: string;

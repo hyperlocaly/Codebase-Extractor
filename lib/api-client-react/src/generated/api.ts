@@ -25,6 +25,8 @@ import type {
   AddPortfolioItem201,
   AddPortfolioItemBody,
   AddPortfolioItemParams,
+  AdminAnalyticsGrowth200,
+  AdminAnalyticsGrowthParams,
   AdminAnalyticsSearch200,
   AdminAnalyticsSearchParams,
   AdminAnalyticsSummary200,
@@ -7180,6 +7182,90 @@ export function useAdminAnalyticsSearch<TData = Awaited<ReturnType<typeof adminA
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getAdminAnalyticsSearchQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAdminAnalyticsGrowthUrl = (params: AdminAnalyticsGrowthParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/analytics/growth?${stringifiedParams}` : `/api/v1/admin/analytics/growth`
+}
+
+/**
+ * @summary Get daily growth trends (businesses registered, reviews submitted) for a marketplace
+ */
+export const adminAnalyticsGrowth = async (params: AdminAnalyticsGrowthParams, options?: RequestInit): Promise<AdminAnalyticsGrowth200> => {
+
+  return customFetch<AdminAnalyticsGrowth200>(getAdminAnalyticsGrowthUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminAnalyticsGrowthQueryKey = (params?: AdminAnalyticsGrowthParams,) => {
+    return [
+    `/api/v1/admin/analytics/growth`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminAnalyticsGrowthQueryOptions = <TData = Awaited<ReturnType<typeof adminAnalyticsGrowth>>, TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse>>(params: AdminAnalyticsGrowthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminAnalyticsGrowth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminAnalyticsGrowthQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminAnalyticsGrowth>>> = ({ signal }) => adminAnalyticsGrowth(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminAnalyticsGrowth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminAnalyticsGrowthQueryResult = NonNullable<Awaited<ReturnType<typeof adminAnalyticsGrowth>>>
+export type AdminAnalyticsGrowthQueryError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse>
+
+
+/**
+ * @summary Get daily growth trends (businesses registered, reviews submitted) for a marketplace
+ */
+
+export function useAdminAnalyticsGrowth<TData = Awaited<ReturnType<typeof adminAnalyticsGrowth>>, TError = ErrorType<UnauthorizedErrorResponse | ForbiddenErrorResponse>>(
+ params: AdminAnalyticsGrowthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminAnalyticsGrowth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminAnalyticsGrowthQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
