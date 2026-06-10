@@ -100,6 +100,39 @@ export const AuthVerifyEmailResponse = zod.object({
 
 
 /**
+ * @summary Request a password reset email
+ */
+export const AuthForgotPasswordBody = zod.object({
+  "email": zod.string().email()
+})
+
+export const AuthForgotPasswordResponse = zod.object({
+  "data": zod.object({
+  "message": zod.string()
+})
+})
+
+
+/**
+ * @summary Reset password using a valid token
+ */
+export const authResetPasswordBodyNewPasswordMin = 8;
+
+
+
+export const AuthResetPasswordBody = zod.object({
+  "token": zod.string(),
+  "newPassword": zod.string().min(authResetPasswordBodyNewPasswordMin)
+})
+
+export const AuthResetPasswordResponse = zod.object({
+  "data": zod.object({
+  "message": zod.string()
+})
+})
+
+
+/**
  * @summary Get marketplace by slug
  */
 export const GetMarketplaceParams = zod.object({

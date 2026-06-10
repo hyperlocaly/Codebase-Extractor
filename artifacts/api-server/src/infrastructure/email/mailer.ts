@@ -110,4 +110,17 @@ export const emailTemplates = {
       `,
     };
   },
+
+  passwordReset(token: string, expiresInMinutes: number): { subject: string; html: string } {
+    return {
+      subject: "Reset your password",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>We received a request to reset your password. Use the token below to complete the reset:</p>
+        <h1 style="font-size:24px;letter-spacing:4px;font-family:monospace;word-break:break-all">${token}</h1>
+        <p>This token expires in <strong>${expiresInMinutes} minutes</strong>.</p>
+        <p>If you did not request a password reset, you can safely ignore this email.</p>
+      `,
+    };
+  },
 };

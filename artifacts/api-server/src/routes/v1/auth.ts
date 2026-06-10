@@ -7,6 +7,7 @@ import {
   userAuthProvidersTable,
   userSessionsTable,
   emailVerificationTokensTable,
+  passwordResetTokensTable,
 } from "@workspace/db";
 import {
   signToken,
@@ -23,6 +24,8 @@ import {
 } from "../../shared/errors";
 import { config } from "../../config";
 import { randomBytes, createHash } from "crypto";
+import { sendEmail, emailTemplates } from "../../infrastructure/email/mailer";
+import { publishEvent } from "../../infrastructure/outbox/publisher";
 
 const router: IRouter = Router();
 
@@ -99,6 +102,11 @@ router.post("/register", async (req, res, next): Promise<void> => {
       expiresAt: emailTokenExpiry,
     });
 
+    sendEmail({
+      to: normalizedEmail,
+      ...emailTemplates.verificationCode(emailToken, 24 * 60),
+    }).catch(() => {});
+
     const accessToken = await signToken({ userId: user!.id });
     const sessionExpiry = new Date(Date.now() + config.auth.tokenExpiryMs);
     const tokenHash = sha256(accessToken);
@@ -107,6 +115,13 @@ router.post("/register", async (req, res, next): Promise<void> => {
       userId: user!.id,
       tokenHash,
       expiresAt: sessionExpiry,
+    });
+
+    await publishEvent(db, {
+      eventType: "UserRegistered",
+      aggregateType: "user",
+      aggregateId: user!.id,
+      payload: { userId: user!.id, email: user!.email, displayName: user!.displayName },
     });
 
     res.setHeader("X-Email-Verification-Required", "true");
@@ -292,6 +307,99 @@ router.post("/verify-email", async (req, res, next): Promise<void> => {
       .where(eq(usersTable.id, record.userId));
 
     sendSuccess(res, { message: "Email verified successfully" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/forgot-password", async (req, res, next): Promise<void> => {
+  try {
+    const { email } = z.object({ email: z.email() }).parse(req.body);
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const [user] = await db
+      .select({ id: usersTable.id, email: usersTable.email })
+      .from(usersTable)
+      .where(and(eq(usersTable.email, normalizedEmail), isNull(usersTable.deletedAt)));
+
+    if (user) {
+      const { raw: resetToken, hash: resetTokenHash } = generateToken();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await db.insert(passwordResetTokensTable).values({
+        userId: user.id,
+        tokenHash: resetTokenHash,
+        expiresAt,
+      });
+
+      sendEmail({
+        to: user.email,
+        ...emailTemplates.passwordReset(resetToken, 60),
+      }).catch(() => {});
+    }
+
+    sendSuccess(res, { message: "If that email is registered, a reset link has been sent." });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/reset-password", async (req, res, next): Promise<void> => {
+  try {
+    const { token, newPassword } = z
+      .object({
+        token: z.string().min(1),
+        newPassword: z.string().min(8, "Password must be at least 8 characters"),
+      })
+      .parse(req.body);
+
+    const tokenHash = sha256(token);
+    const now = new Date();
+
+    const [record] = await db
+      .select({
+        id: passwordResetTokensTable.id,
+        userId: passwordResetTokensTable.userId,
+        expiresAt: passwordResetTokensTable.expiresAt,
+        usedAt: passwordResetTokensTable.usedAt,
+      })
+      .from(passwordResetTokensTable)
+      .where(eq(passwordResetTokensTable.tokenHash, tokenHash));
+
+    if (!record) {
+      return next(new NotFoundError("Reset token"));
+    }
+
+    if (record.usedAt) {
+      return next(new ValidationError("Token has already been used"));
+    }
+
+    if (record.expiresAt < now) {
+      return next(new ValidationError("Token has expired"));
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+
+    await db
+      .update(passwordResetTokensTable)
+      .set({ usedAt: now })
+      .where(eq(passwordResetTokensTable.id, record.id));
+
+    await db
+      .update(userAuthProvidersTable)
+      .set({ passwordHash: newPasswordHash })
+      .where(
+        and(
+          eq(userAuthProvidersTable.userId, record.userId),
+          eq(userAuthProvidersTable.provider, "local"),
+        ),
+      );
+
+    await db
+      .delete(userSessionsTable)
+      .where(eq(userSessionsTable.userId, record.userId));
+
+    sendSuccess(res, { message: "Password reset successfully. Please log in with your new password." });
   } catch (err) {
     next(err);
   }

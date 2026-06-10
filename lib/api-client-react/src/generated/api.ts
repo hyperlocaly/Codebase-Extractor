@@ -51,6 +51,8 @@ import type {
   AdminUpdateBusinessStatusParams,
   AttachBusinessMediaBody,
   AttachBusinessMediaParams,
+  AuthForgotPasswordBody,
+  AuthResetPasswordBody,
   AuthResponse,
   AuthVerifyEmailBody,
   BusinessContactInput,
@@ -661,6 +663,148 @@ export const useAuthVerifyEmail = <TError = ErrorType<ValidationErrorResponse | 
         TContext
       > => {
       return useMutation(getAuthVerifyEmailMutationOptions(options));
+    }
+
+export const getAuthForgotPasswordUrl = () => {
+
+
+
+
+  return `/api/v1/auth/forgot-password`
+}
+
+/**
+ * @summary Request a password reset email
+ */
+export const authForgotPassword = async (authForgotPasswordBody: AuthForgotPasswordBody, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getAuthForgotPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      authForgotPasswordBody,)
+  }
+);}
+
+
+
+
+export const getAuthForgotPasswordMutationOptions = <TError = ErrorType<ValidationErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authForgotPassword>>, TError,{data: BodyType<AuthForgotPasswordBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authForgotPassword>>, TError,{data: BodyType<AuthForgotPasswordBody>}, TContext> => {
+
+const mutationKey = ['authForgotPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authForgotPassword>>, {data: BodyType<AuthForgotPasswordBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authForgotPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthForgotPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authForgotPassword>>>
+    export type AuthForgotPasswordMutationBody = BodyType<AuthForgotPasswordBody>
+    export type AuthForgotPasswordMutationError = ErrorType<ValidationErrorResponse>
+
+    /**
+ * @summary Request a password reset email
+ */
+export const useAuthForgotPassword = <TError = ErrorType<ValidationErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authForgotPassword>>, TError,{data: BodyType<AuthForgotPasswordBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authForgotPassword>>,
+        TError,
+        {data: BodyType<AuthForgotPasswordBody>},
+        TContext
+      > => {
+      return useMutation(getAuthForgotPasswordMutationOptions(options));
+    }
+
+export const getAuthResetPasswordUrl = () => {
+
+
+
+
+  return `/api/v1/auth/reset-password`
+}
+
+/**
+ * @summary Reset password using a valid token
+ */
+export const authResetPassword = async (authResetPasswordBody: AuthResetPasswordBody, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getAuthResetPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      authResetPasswordBody,)
+  }
+);}
+
+
+
+
+export const getAuthResetPasswordMutationOptions = <TError = ErrorType<ValidationErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authResetPassword>>, TError,{data: BodyType<AuthResetPasswordBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authResetPassword>>, TError,{data: BodyType<AuthResetPasswordBody>}, TContext> => {
+
+const mutationKey = ['authResetPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authResetPassword>>, {data: BodyType<AuthResetPasswordBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authResetPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthResetPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authResetPassword>>>
+    export type AuthResetPasswordMutationBody = BodyType<AuthResetPasswordBody>
+    export type AuthResetPasswordMutationError = ErrorType<ValidationErrorResponse | NotFoundErrorResponse>
+
+    /**
+ * @summary Reset password using a valid token
+ */
+export const useAuthResetPassword = <TError = ErrorType<ValidationErrorResponse | NotFoundErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authResetPassword>>, TError,{data: BodyType<AuthResetPasswordBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authResetPassword>>,
+        TError,
+        {data: BodyType<AuthResetPasswordBody>},
+        TContext
+      > => {
+      return useMutation(getAuthResetPasswordMutationOptions(options));
     }
 
 export const getGetMarketplaceUrl = (slug: string,) => {

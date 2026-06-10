@@ -1,0 +1,225 @@
+PROJECT GOVERNANCE MODE
+
+You are no longer working on Sprint features.
+
+Sprint 1–10 are considered COMPLETE unless a later verification audit proves otherwise.
+
+From this point forward:
+
+* Do NOT propose new features.
+* Do NOT suggest enhancements.
+* Do NOT suggest UX improvements.
+* Do NOT suggest refactors.
+* Do NOT suggest optimizations.
+* Do NOT suggest drag-and-drop.
+* Do NOT suggest DataTable migrations.
+* Do NOT suggest LocationCascade extraction.
+* Do NOT suggest chart improvements.
+* Do NOT suggest code cleanup.
+* Do NOT suggest future roadmap ideas.
+* Do NOT end reports with "Next I can..."
+* Do NOT create new work.
+
+You must operate from the backlog only.
+
+---
+
+## BUCKET A — COMPLETED ROADMAP
+
+Treat these as completed unless a verification audit proves otherwise.
+
+Sprint 1–5
+Backend foundation
+RBAC
+API platform
+Core schemas
+Core services
+
+Sprint 6
+Business onboarding
+Profile management
+Hours
+Contacts
+Dashboard core
+
+Sprint 7
+Products
+Services
+Updates
+
+Sprint 8
+Portfolio
+Media
+Branches
+Service Areas
+Verification
+
+Sprint 9
+Reviews
+Saved Items
+Notifications
+
+Sprint 10
+Admin Dashboard
+Admin Businesses
+Admin Claims
+Admin Reviews
+Admin Analytics
+
+Do not reopen these sprints unless:
+
+* a bug is discovered
+* a feature is proven incomplete
+* a verification audit produces evidence
+
+---
+
+## BUCKET B — PLATFORM READINESS BLOCKERS
+
+This is now the primary work queue.
+
+Only work from this list.
+
+Current blockers:
+
+1. Search infrastructure
+
+   * pg_trgm extension
+   * business search failures
+   * search performance issues
+
+2. Authentication recovery
+
+   * forgot password
+   * reset password
+   * token lifecycle verification
+
+3. Email verification
+
+   * UserRegistered event
+   * verification email delivery
+   * verification completion flow
+
+4. Media infrastructure
+
+   * placeholder upload URLs
+   * production storage integration
+   * upload persistence verification
+
+5. Production deployment readiness
+
+   * environment variables
+   * secrets validation
+   * startup validation
+   * health checks
+   * monitoring readiness
+
+6. Security readiness
+
+   * permission verification
+   * route protection audit
+   * admin access verification
+   * auth flow verification
+
+7. Data integrity
+
+   * migrations
+   * seed consistency
+   * cache invalidation verification
+   * transaction safety
+
+---
+
+## WORKFLOW RULES
+
+Every task must follow:
+
+1. Audit
+2. Verify evidence
+3. Implement
+4. Typecheck
+5. Build
+6. Verify
+7. Report
+
+Never skip verification.
+
+Never assume previous reports are correct.
+
+Trust code over previous summaries.
+
+---
+
+## AUDIT RULES
+
+When auditing:
+
+* Read actual files.
+* Read actual routes.
+* Read actual schemas.
+* Read actual hooks.
+* Read actual OpenAPI definitions.
+* Read actual permissions.
+
+Do not rely on memory.
+
+Do not rely on previous completion claims.
+
+Provide evidence.
+
+---
+
+## REPORT FORMAT
+
+Every report must contain:
+
+Completed Items
+
+Files Changed
+
+Typecheck Results
+
+Build Results
+
+Verification Results
+
+Remaining Blockers
+
+Platform Readiness %
+
+Launch Readiness %
+
+Production Readiness %
+
+Critical Blockers
+
+Non-Critical Blockers
+
+---
+
+## COMPLETION RULE
+
+Only declare something complete when:
+
+* implementation exists
+* typecheck passes
+* build passes
+* runtime verification passes
+
+---
+
+## NO SUGGESTION RULE
+
+Never suggest work outside:
+
+* verified blocker list
+* roadmap backlog
+* discovered production issues
+
+Never end with:
+
+"Next I can..."
+
+Instead end with:
+
+"Awaiting next audited backlog item."

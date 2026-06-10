@@ -646,6 +646,16 @@ export type AuthVerifyEmailBody = {
   token: string;
 };
 
+export type AuthForgotPasswordBody = {
+  email: string;
+};
+
+export type AuthResetPasswordBody = {
+  token: string;
+  /** @minLength 8 */
+  newPassword: string;
+};
+
 export type ListCategoriesParams = {
 /**
  * Parent category slug; omit for root categories
