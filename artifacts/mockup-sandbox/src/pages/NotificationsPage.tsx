@@ -12,16 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
   Bell,
   BellOff,
@@ -279,6 +270,12 @@ export default function NotificationsPage() {
           n.id === notif.id ? { ...n, readAt: new Date().toISOString() } : n,
         ),
       );
+      if (!notif.readAt) {
+        queryClient.setQueryData(unreadQK, (old: any) => {
+          const count = old?.data?.count ?? 0;
+          return { ...old, data: { ...(old?.data ?? {}), count: Math.max(0, count - 1) } };
+        });
+      }
       invalidateAll();
     } catch {
       toast.error('Failed to mark as read.');
@@ -296,6 +293,10 @@ export default function NotificationsPage() {
       await markAllRead.mutateAsync();
       // Optimistically mark all as read in local state
       setAllNotifs((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+      queryClient.setQueryData(unreadQK, (old: any) => ({
+        ...old,
+        data: { ...(old?.data ?? {}), count: 0 },
+      }));
       invalidateAll();
       toast.success('All notifications marked as read.');
     } catch {
@@ -312,6 +313,12 @@ export default function NotificationsPage() {
       await deleteNotif.mutateAsync({ id: notif.id });
       // Remove from local state immediately
       setAllNotifs((prev) => prev.filter((n) => n.id !== notif.id));
+      if (!notif.readAt) {
+        queryClient.setQueryData(unreadQK, (old: any) => {
+          const count = old?.data?.count ?? 0;
+          return { ...old, data: { ...(old?.data ?? {}), count: Math.max(0, count - 1) } };
+        });
+      }
       invalidateAll();
     } catch {
       toast.error('Failed to delete notification.');
@@ -457,27 +464,17 @@ export default function NotificationsPage() {
         </>
       )}
 
-      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete notification?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDelete?.title
-                ? `"${pendingDelete.title}" will be permanently deleted.`
-                : 'This notification will be permanently deleted.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleConfirmDelete}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        title="Delete notification?"
+        description={
+          pendingDelete?.title
+            ? `"${pendingDelete.title}" will be permanently deleted.`
+            : 'This notification will be permanently deleted.'
+        }
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

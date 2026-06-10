@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -31,16 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import {
   Newspaper,
   Pencil,
@@ -323,8 +313,8 @@ export default function UpdatesPage() {
   const [form, setForm] = useState<UpdateFormState>(emptyForm());
   const [isSaving, setIsSaving] = useState(false);
 
-  const [deleteTarget, setDeleteTarget] = useState<BusinessUpdateItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const pendingDeletions = useRef<Record<string, { item: BusinessUpdateItem; timer: ReturnType<typeof setTimeout> }>>({});
 
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -356,6 +346,7 @@ export default function UpdatesPage() {
   const allUpdates: BusinessUpdateItem[] = (data?.data ?? []) as BusinessUpdateItem[];
 
   const filtered = allUpdates.filter((u) => {
+    if (hiddenIds.has(u.id)) return false;
     if (filterType !== 'all' && u.updateType !== filterType) return false;
     if (filterStatus !== 'all' && u.status !== filterStatus) return false;
     if (search && !u.title.toLowerCase().includes(search.toLowerCase())) return false;
@@ -434,23 +425,43 @@ export default function UpdatesPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!businessId || !deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await deleteUpdate({
-        businessId,
-        updateId: deleteTarget.id,
+  function handleSoftDelete(update: BusinessUpdateItem) {
+    if (!businessId) return;
+    setHiddenIds((prev) => new Set([...prev, update.id]));
+    const timer = setTimeout(() => {
+      if (!pendingDeletions.current[update.id]) return;
+      delete pendingDeletions.current[update.id];
+      deleteUpdate({
+        businessId: businessId!,
+        updateId: update.id,
         params: { marketplace: MARKETPLACE_SLUG },
-      });
-      toast.success('Update deleted');
-      setDeleteTarget(null);
-      await invalidate();
-    } catch {
-      toast.error('Failed to delete update.');
-    } finally {
-      setIsDeleting(false);
-    }
+      })
+        .then(() => invalidate())
+        .catch(() => {
+          toast.error('Failed to delete update.');
+          setHiddenIds((prev) => {
+            const next = new Set(prev);
+            next.delete(update.id);
+            return next;
+          });
+        });
+    }, 5000);
+    pendingDeletions.current[update.id] = { item: update, timer };
+    toast(`"${update.title}" deleted`, {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          clearTimeout(pendingDeletions.current[update.id]?.timer);
+          delete pendingDeletions.current[update.id];
+          setHiddenIds((prev) => {
+            const next = new Set(prev);
+            next.delete(update.id);
+            return next;
+          });
+        },
+      },
+    });
   }
 
   const publishedCount = allUpdates.filter((u) => u.status === 'published').length;
@@ -576,7 +587,7 @@ export default function UpdatesPage() {
               key={u.id}
               update={u}
               onEdit={openEdit}
-              onDelete={setDeleteTarget}
+              onDelete={handleSoftDelete}
               onToggleStatus={handleToggleStatus}
               isTogglingId={togglingId}
             />
@@ -605,26 +616,6 @@ export default function UpdatesPage() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this update?</AlertDialogTitle>
-            <AlertDialogDescription>
-              "{deleteTarget?.title}" will be permanently removed and hidden from your public profile.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting…' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

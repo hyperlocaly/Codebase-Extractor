@@ -28,16 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Wrench, Pencil, Trash2, Plus, Clock, Upload, X, Search, ImageOff } from 'lucide-react';
 
 interface ServiceFormState {
@@ -181,7 +171,8 @@ export default function ServicesPage() {
   const [form, setForm] = useState<ServiceFormState>(emptyForm());
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ServiceSummary | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const pendingDeletions = useRef<Record<string, { item: ServiceSummary; timer: ReturnType<typeof setTimeout> }>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft'>('all');
 
@@ -200,6 +191,7 @@ export default function ServicesPage() {
   const allServices: ServiceSummary[] = (servicesData as { data?: ServiceSummary[] } | undefined)?.data ?? [];
 
   const filteredServices = allServices.filter((s) => {
+    if (hiddenIds.has(s.id)) return false;
     const matchesSearch =
       !searchQuery ||
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -331,22 +323,44 @@ export default function ServicesPage() {
     }
   }
 
-  function handleDelete() {
-    if (!businessId || !deleteTarget) return;
-    deleteService.mutate(
-      { businessId, id: deleteTarget.id, params: { marketplace: MARKETPLACE_SLUG } },
-      {
-        onSuccess: () => {
-          toast.success('Service deleted');
-          queryClient.invalidateQueries({ queryKey: servicesQK });
-          setDeleteTarget(null);
+  function handleSoftDelete(service: ServiceSummary) {
+    if (!businessId) return;
+    setHiddenIds((prev) => new Set([...prev, service.id]));
+    const timer = setTimeout(() => {
+      if (!pendingDeletions.current[service.id]) return;
+      delete pendingDeletions.current[service.id];
+      deleteService.mutate(
+        { businessId: businessId!, id: service.id, params: { marketplace: MARKETPLACE_SLUG } },
+        {
+          onSuccess: () => queryClient.invalidateQueries({ queryKey: servicesQK }),
+          onError: (err) => {
+            const e = err as { message?: string };
+            toast.error(e.message ?? 'Failed to delete service');
+            setHiddenIds((prev) => {
+              const next = new Set(prev);
+              next.delete(service.id);
+              return next;
+            });
+          },
         },
-        onError: (err) => {
-          const e = err as { message?: string };
-          toast.error(e.message ?? 'Failed to delete service');
+      );
+    }, 5000);
+    pendingDeletions.current[service.id] = { item: service, timer };
+    toast(`"${service.name}" deleted`, {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          clearTimeout(pendingDeletions.current[service.id]?.timer);
+          delete pendingDeletions.current[service.id];
+          setHiddenIds((prev) => {
+            const next = new Set(prev);
+            next.delete(service.id);
+            return next;
+          });
         },
       },
-    );
+    });
   }
 
   const isSaving = createService.isPending || updateService.isPending || presign.isPending;
@@ -475,7 +489,7 @@ export default function ServicesPage() {
                       variant="ghost"
                       size="icon"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(s)}
+                      onClick={() => handleSoftDelete(s)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -638,28 +652,6 @@ export default function ServicesPage() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete service?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove{' '}
-              <span className="font-medium">{deleteTarget?.name}</span> from your listings.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteService.isPending}
-            >
-              {deleteService.isPending ? 'Deleting…' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

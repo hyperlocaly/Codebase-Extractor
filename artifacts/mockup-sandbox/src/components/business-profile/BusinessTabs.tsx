@@ -22,16 +22,7 @@ import {
   getGetReviewSummaryQueryKey,
 } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import { HoursTable } from './HoursTable';
 import { ProductList } from './ProductList';
 import { ServiceList } from './ServiceList';
@@ -348,29 +339,14 @@ function ReviewsSection({
         onCancel={() => setEditingReview(null)}
       />
 
-      <AlertDialog
+      <ConfirmDeleteDialog
         open={!!deleteConfirmId}
         onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete your review?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove your review. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting…' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Delete your review?"
+        description="This will permanently remove your review. This action cannot be undone."
+        isPending={isDeleting}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

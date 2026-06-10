@@ -28,16 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Package, Pencil, Trash2, Plus, Upload, X, Search, ImageOff } from 'lucide-react';
 
 interface ProductFormState {
@@ -174,7 +164,8 @@ export default function ProductsPage() {
   const [form, setForm] = useState<ProductFormState>(emptyForm());
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ProductSummary | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const pendingDeletions = useRef<Record<string, { item: ProductSummary; timer: ReturnType<typeof setTimeout> }>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft'>('all');
 
@@ -193,6 +184,7 @@ export default function ProductsPage() {
   const allProducts: ProductSummary[] = (productsData as { data?: ProductSummary[] } | undefined)?.data ?? [];
 
   const filteredProducts = allProducts.filter((p) => {
+    if (hiddenIds.has(p.id)) return false;
     const matchesSearch =
       !searchQuery ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -314,22 +306,44 @@ export default function ProductsPage() {
     }
   }
 
-  function handleDelete() {
-    if (!businessId || !deleteTarget) return;
-    deleteProduct.mutate(
-      { businessId, id: deleteTarget.id, params: { marketplace: MARKETPLACE_SLUG } },
-      {
-        onSuccess: () => {
-          toast.success('Product deleted');
-          queryClient.invalidateQueries({ queryKey: productsQK });
-          setDeleteTarget(null);
+  function handleSoftDelete(product: ProductSummary) {
+    if (!businessId) return;
+    setHiddenIds((prev) => new Set([...prev, product.id]));
+    const timer = setTimeout(() => {
+      if (!pendingDeletions.current[product.id]) return;
+      delete pendingDeletions.current[product.id];
+      deleteProduct.mutate(
+        { businessId: businessId!, id: product.id, params: { marketplace: MARKETPLACE_SLUG } },
+        {
+          onSuccess: () => queryClient.invalidateQueries({ queryKey: productsQK }),
+          onError: (err) => {
+            const e = err as { message?: string };
+            toast.error(e.message ?? 'Failed to delete product');
+            setHiddenIds((prev) => {
+              const next = new Set(prev);
+              next.delete(product.id);
+              return next;
+            });
+          },
         },
-        onError: (err) => {
-          const e = err as { message?: string };
-          toast.error(e.message ?? 'Failed to delete product');
+      );
+    }, 5000);
+    pendingDeletions.current[product.id] = { item: product, timer };
+    toast(`"${product.name}" deleted`, {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          clearTimeout(pendingDeletions.current[product.id]?.timer);
+          delete pendingDeletions.current[product.id];
+          setHiddenIds((prev) => {
+            const next = new Set(prev);
+            next.delete(product.id);
+            return next;
+          });
         },
       },
-    );
+    });
   }
 
   const isSaving = createProduct.isPending || updateProduct.isPending || presign.isPending;
@@ -457,7 +471,7 @@ export default function ProductsPage() {
                       variant="ghost"
                       size="icon"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(p)}
+                      onClick={() => handleSoftDelete(p)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -618,28 +632,6 @@ export default function ProductsPage() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete product?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove{' '}
-              <span className="font-medium">{deleteTarget?.name}</span> from your listings.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteProduct.isPending}
-            >
-              {deleteProduct.isPending ? 'Deleting…' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

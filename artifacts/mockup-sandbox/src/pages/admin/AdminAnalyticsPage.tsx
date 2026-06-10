@@ -24,7 +24,19 @@ import {
   RefreshCw,
   ChevronDown,
   TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 type AnalyticsSummary = {
   marketplace: { id: string; slug: string; name: string };
@@ -146,6 +158,58 @@ export default function AdminAnalyticsPage() {
       </section>
 
       <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Growth Trends</h2>
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold">Business &amp; Review Activity</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {summaryError ? (
+              <div className="flex h-44 items-center justify-center">
+                <p className="text-sm text-muted-foreground">Error loading data.</p>
+              </div>
+            ) : summaryLoading ? (
+              <Skeleton className="h-44 w-full rounded-lg" />
+            ) : (
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={176}>
+                  <AreaChart data={[]} margin={{ top: 8, right: 16, bottom: 0, left: -10 }}>
+                    <defs>
+                      <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="hsl(var(--primary))"
+                      fill="url(#colorBiz)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80">
+                  <TrendingUp className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">Historical growth data not yet available.</p>
+                  <p className="text-xs text-muted-foreground/60">
+                    Data collection begins once your marketplace goes live.
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Search Insights</h2>
           <DropdownMenu>
@@ -196,17 +260,29 @@ export default function AdminAnalyticsPage() {
                 {(searchAnalytics?.topQueries ?? []).length === 0 ? (
                   <p className="text-xs text-muted-foreground">No search data for this period.</p>
                 ) : (
-                  <ol className="space-y-2">
-                    {(searchAnalytics?.topQueries ?? []).slice(0, 10).map(({ query, count }, i) => (
-                      <li key={query} className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-5 shrink-0 text-xs tabular-nums text-muted-foreground/60">{i + 1}</span>
-                          <span className="truncate text-sm">{query}</span>
-                        </div>
-                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{count.toLocaleString()}</span>
-                      </li>
-                    ))}
-                  </ol>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={(searchAnalytics?.topQueries ?? []).slice(0, 8)}
+                      layout="vertical"
+                      margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 10 }} />
+                      <YAxis
+                        type="category"
+                        dataKey="query"
+                        width={96}
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(v: string) => (v.length > 14 ? v.slice(0, 14) + '…' : v)}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [value.toLocaleString(), 'Searches']}
+                        labelStyle={{ fontSize: 11 }}
+                        itemStyle={{ fontSize: 11 }}
+                      />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} maxBarSize={18} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 )}
               </CardContent>
             </Card>
