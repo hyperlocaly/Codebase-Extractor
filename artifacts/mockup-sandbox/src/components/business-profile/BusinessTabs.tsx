@@ -16,11 +16,22 @@ import type {
 import {
   useListReviews,
   useAuthMe,
+  useDeleteReview,
   ListReviewsSort,
   getListReviewsQueryKey,
   getGetReviewSummaryQueryKey,
 } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { HoursTable } from './HoursTable';
 import { ProductList } from './ProductList';
 import { ServiceList } from './ServiceList';
@@ -32,6 +43,7 @@ import { UpdatesList } from './UpdatesList';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Globe, Info, Images, MessageSquare, Package, Rss, Scissors, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 
 type BusinessDetail = NonNullable<GetBusiness200['data']>;
@@ -173,8 +185,13 @@ function ReviewsSection({
   const [hasMore, setHasMore] = useState(false);
   const isFirstPageRef = useRef(true);
 
+  const [editingReview, setEditingReview] = useState<ReviewWithResponse | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   const { data: meData } = useAuthMe();
   const isAuthenticated = !!(meData as any)?.data;
+
+  const { mutate: deleteReview, isPending: isDeleting } = useDeleteReview();
 
   const queryKey = getListReviewsQueryKey({
     businessId,
@@ -217,6 +234,19 @@ function ReviewsSection({
     setHasMore((data as any)?.pagination?.hasMore ?? false);
   }, [data]);
 
+  function invalidateBoth() {
+    isFirstPageRef.current = true;
+    setCursor(undefined);
+    setAllReviews([]);
+    refetch();
+    queryClient.invalidateQueries({
+      queryKey: getGetReviewSummaryQueryKey({
+        businessId,
+        marketplace: MARKETPLACE_SLUG,
+      }),
+    });
+  }
+
   function handleSortChange(s: SortOption) {
     isFirstPageRef.current = true;
     setSort(s);
@@ -237,6 +267,25 @@ function ReviewsSection({
       isFirstPageRef.current = false;
       setCursor(nextCursor);
     }
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteConfirmId) return;
+    deleteReview(
+      { id: deleteConfirmId, params: { marketplace: MARKETPLACE_SLUG } },
+      {
+        onSuccess: () => {
+          toast.success('Review deleted.');
+          setDeleteConfirmId(null);
+          setEditingReview(null);
+          invalidateBoth();
+        },
+        onError: (err: any) => {
+          toast.error(err?.message ?? 'Failed to delete review.');
+          setDeleteConfirmId(null);
+        },
+      },
+    );
   }
 
   const userReviewId = isAuthenticated ? (meData as any)?.data?.id : null;
@@ -262,6 +311,9 @@ function ReviewsSection({
         ratingFilter={ratingFilter}
         onRatingFilterChange={handleRatingFilterChange}
         isAuthenticated={isAuthenticated}
+        currentUserId={userReviewId}
+        onEditRequest={(review) => setEditingReview(review)}
+        onDeleteRequest={(reviewId) => setDeleteConfirmId(reviewId)}
       />
       {hasMore && (
         <div className="flex justify-center pt-2">
@@ -284,21 +336,41 @@ function ReviewsSection({
       )}
       <ReviewForm
         businessId={businessId}
-        onSuccess={() => {
-          isFirstPageRef.current = true;
-          setCursor(undefined);
-          setAllReviews([]);
-          refetch();
-          // Invalidate review summary so rating count + average update immediately
-          queryClient.invalidateQueries({
-            queryKey: getGetReviewSummaryQueryKey({
-              businessId,
-              marketplace: MARKETPLACE_SLUG,
-            }),
-          });
-        }}
+        onSuccess={invalidateBoth}
         hasExistingReview={hasExistingReview}
+        editingReview={editingReview}
+        onEditRequest={() => {
+          const ownReview = allReviews.find(
+            (r) => !r.isAnonymous && (r as any).reviewerId === userReviewId,
+          );
+          if (ownReview) setEditingReview(ownReview);
+        }}
+        onCancel={() => setEditingReview(null)}
       />
+
+      <AlertDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your review?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove your review. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting…' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

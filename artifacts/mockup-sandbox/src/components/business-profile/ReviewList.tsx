@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReviewSummary, ReviewResponse } from '@workspace/api-client-react';
 import { useReportReview } from '@workspace/api-client-react';
 import { Stars } from './ReviewSummary';
-import { MessageSquare, UserCircle, Flag, AlertCircle, RefreshCw, ChevronDown } from 'lucide-react';
+import { MessageSquare, UserCircle, Flag, AlertCircle, RefreshCw, ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -125,11 +125,22 @@ function ReportDialog({
 function ReviewCard({
   review,
   isAuthenticated,
+  currentUserId,
+  onEditRequest,
+  onDeleteRequest,
 }: {
   review: ReviewWithResponse;
   isAuthenticated: boolean;
+  currentUserId?: string | null;
+  onEditRequest?: (review: ReviewWithResponse) => void;
+  onDeleteRequest?: (reviewId: string) => void;
 }) {
   const [reportOpen, setReportOpen] = useState(false);
+
+  const isOwnReview =
+    !!currentUserId &&
+    !review.isAnonymous &&
+    (review as any).reviewerId === currentUserId;
 
   const displayName = review.isAnonymous ? 'Anonymous' : (review.reviewerName ?? 'Customer');
   const avatar = review.isAnonymous ? null : initials(review.reviewerName);
@@ -150,7 +161,25 @@ function ReviewCard({
           </div>
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">{timeAgo(review.createdAt)}</span>
-            {isAuthenticated && (
+            {isOwnReview && onEditRequest && (
+              <button
+                className="ml-1 rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-primary"
+                title="Edit your review"
+                onClick={() => onEditRequest(review)}
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+            {isOwnReview && onDeleteRequest && (
+              <button
+                className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-destructive"
+                title="Delete your review"
+                onClick={() => onDeleteRequest(review.id)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+            {isAuthenticated && !isOwnReview && (
               <button
                 className="ml-1 rounded p-0.5 text-muted-foreground/40 transition-colors hover:text-destructive/70"
                 title="Report review"
@@ -171,7 +200,7 @@ function ReviewCard({
           <OwnerResponseBlock response={review.ownerResponse} />
         )}
       </div>
-      {isAuthenticated && (
+      {isAuthenticated && !isOwnReview && (
         <ReportDialog
           reviewId={review.id}
           open={reportOpen}
@@ -199,6 +228,9 @@ interface ReviewListProps {
   ratingFilter: number | undefined;
   onRatingFilterChange: (r: number | undefined) => void;
   isAuthenticated: boolean;
+  currentUserId?: string | null;
+  onEditRequest?: (review: ReviewWithResponse) => void;
+  onDeleteRequest?: (reviewId: string) => void;
 }
 
 export function ReviewList({
@@ -211,6 +243,9 @@ export function ReviewList({
   ratingFilter,
   onRatingFilterChange,
   isAuthenticated,
+  currentUserId,
+  onEditRequest,
+  onDeleteRequest,
 }: ReviewListProps) {
   return (
     <div className="space-y-4">
@@ -294,7 +329,14 @@ export function ReviewList({
       ) : (
         <div className="space-y-3">
           {reviews.map((r) => (
-            <ReviewCard key={r.id} review={r} isAuthenticated={isAuthenticated} />
+            <ReviewCard
+              key={r.id}
+              review={r}
+              isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId}
+              onEditRequest={onEditRequest}
+              onDeleteRequest={onDeleteRequest}
+            />
           ))}
         </div>
       )}

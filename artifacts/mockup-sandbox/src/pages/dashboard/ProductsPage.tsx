@@ -12,6 +12,7 @@ import {
 } from '@workspace/api-client-react';
 import type { ProductSummary, ProductInput } from '@workspace/api-client-react';
 import { useDashboard } from '@/providers/DashboardProvider';
+import { useMarketplace } from '@/providers/MarketplaceProvider';
 import { MARKETPLACE_SLUG } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -166,6 +167,7 @@ function ImageUploadField({
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const { businessId } = useDashboard();
+  const { currencyId } = useMarketplace();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductSummary | null>(null);
@@ -271,6 +273,7 @@ export default function ProductsPage() {
       name,
       description: form.description.trim() || undefined,
       price: form.price.trim() || undefined,
+      currencyId: currencyId ?? undefined,
       unit: form.unit.trim() || undefined,
       imageUrl,
       stockStatus: form.stockStatus,
