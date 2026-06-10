@@ -1,0 +1,88 @@
+BUCKET B — VERIFICATION AUDIT (NO IMPLEMENTATION)
+
+Rules:
+
+* Audit only.
+* Do NOT write code.
+* Do NOT modify files.
+* Do NOT install packages.
+* Do NOT run migrations.
+* Do NOT create endpoints.
+* Evidence only.
+
+Goal:
+Verify every claim made in the latest implementation report for:
+
+1. Blocker 1 — Search Infrastructure
+2. Blocker 2 — Authentication Recovery
+3. Blocker 3 — Email Verification
+
+For each item:
+
+A. Verify the implementation actually exists in code.
+B. Verify it compiles.
+C. Verify it is wired into runtime execution.
+D. Verify it survives restart.
+E. Verify there is no partial implementation or hidden gap.
+
+Required checks:
+
+SEARCH
+
+* Verify pg_trgm extension installation is reproducible.
+* Verify setup:extensions script exists and works.
+* Verify all trigram indexes exist.
+* Verify every similarity() call is protected by pg_trgm.
+* Verify GET /v1/search/businesses works after restart.
+* Verify GET /v1/locations/search works after restart.
+* Verify no remaining search endpoints can still throw 500 due to pg_trgm.
+
+AUTH RECOVERY
+
+* Verify forgot-password route exists.
+* Verify reset-password route exists.
+* Verify OpenAPI definitions exist.
+* Verify generated client hooks exist.
+* Verify password reset email template exists.
+* Verify sessions are invalidated after reset.
+* Verify used tokens cannot be reused.
+* Verify expired tokens fail.
+* Verify unknown emails do not leak account existence.
+
+EMAIL VERIFICATION
+
+* Verify registration sends verification email.
+* Verify verification token insertion occurs.
+* Verify verify-email route works.
+* Verify UserRegistered event is actually published.
+* Verify outbox row is created.
+* Verify event survives restart.
+* Verify no code path skips event publication.
+
+Output format:
+
+SECTION 1 — VERIFIED COMPLETE
+List only items proven with evidence.
+
+SECTION 2 — PARTIAL IMPLEMENTATIONS
+List anything that exists but is incomplete.
+
+SECTION 3 — FALSE POSITIVES
+List any item reported as complete that is not actually complete.
+
+SECTION 4 — REGRESSIONS
+List anything broken by the changes.
+
+SECTION 5 — REMAINING GAPS
+List anything still preventing production readiness.
+
+SECTION 6 — UPDATED COMPLETION
+Blocker 1 %
+Blocker 2 %
+Blocker 3 %
+Bucket B Overall %
+
+Do not propose enhancements.
+Do not suggest future work.
+Do not implement fixes.
+Audit only.
