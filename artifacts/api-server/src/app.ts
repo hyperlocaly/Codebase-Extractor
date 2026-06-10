@@ -118,13 +118,14 @@ app.get("/health", healthResponse);
 app.get("/healthz", healthResponse);
 
 const readinessResponse = async (_req: Request, res: Response) => {
+  const emailStatus = config.email.smtpHost ? "configured" : "unconfigured";
   try {
     await db.execute(sql`SELECT 1`);
-    res.status(200).json({ status: "ready", db: "ok", timestamp: new Date().toISOString() });
+    res.status(200).json({ status: "ready", db: "ok", email: emailStatus, timestamp: new Date().toISOString() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err: msg }, "Readiness check failed");
-    res.status(503).json({ status: "not_ready", db: "error", timestamp: new Date().toISOString() });
+    res.status(503).json({ status: "not_ready", db: "error", email: emailStatus, timestamp: new Date().toISOString() });
   }
 };
 

@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { config } from "./config";
 import { startOutboxWorker, stopOutboxWorker } from "./infrastructure/outbox/worker";
 import { startJobWorker, stopJobWorker } from "./infrastructure/jobs/worker";
 import { registerAllJobHandlers } from "./infrastructure/jobs/handlers";
@@ -19,6 +20,10 @@ if (Number.isNaN(port) || port <= 0) {
 
 // Register all background job handlers
 registerAllJobHandlers();
+
+if (!config.email.smtpHost) {
+  logger.warn("SMTP not configured — email delivery is disabled. Set SMTP_HOST to enable.");
+}
 
 const server = app.listen(port, (err) => {
   if (err) {

@@ -220,6 +220,20 @@ export async function handleDomainEvent(event: DomainEvent): Promise<void> {
         break;
       }
 
+      case "UserRegistered": {
+        const { userId, displayName } = payload as { userId: string; email: string; displayName: string };
+        await createNotification(
+          userId,
+          "welcome",
+          "Welcome to Fashion Nigeria!",
+          `Hi ${displayName}, your account is ready. Start by browsing listings or adding your business.`,
+          "user",
+          userId,
+          "/dashboard",
+        );
+        break;
+      }
+
       case "ClaimSubmitted": {
         // No user notification needed — admin is notified via analytics/dashboard
         break;
