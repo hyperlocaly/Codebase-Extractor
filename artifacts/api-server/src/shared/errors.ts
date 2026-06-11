@@ -70,6 +70,13 @@ export class IdempotencyConflictError extends AppError {
   }
 }
 
+export class ServiceUnavailableError extends AppError {
+  constructor(message = "Service temporarily unavailable") {
+    super("SERVICE_UNAVAILABLE", message, 503);
+    this.name = "ServiceUnavailableError";
+  }
+}
+
 export function isAppError(err: unknown): err is AppError {
   return err instanceof AppError;
 }

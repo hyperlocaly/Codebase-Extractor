@@ -21,6 +21,7 @@ import {
   UnauthorizedError,
   ConflictError,
   NotFoundError,
+  ServiceUnavailableError,
 } from "../../shared/errors";
 import { config } from "../../config";
 import { randomBytes, createHash } from "crypto";
@@ -102,10 +103,10 @@ router.post("/register", async (req, res, next): Promise<void> => {
       expiresAt: emailTokenExpiry,
     });
 
-    sendEmail({
+    const emailSent = await sendEmail({
       to: normalizedEmail,
       ...emailTemplates.verificationCode(emailToken, 24 * 60),
-    }).catch(() => {});
+    });
 
     const accessToken = await signToken({ userId: user!.id });
     const sessionExpiry = new Date(Date.now() + config.auth.tokenExpiryMs);
@@ -125,6 +126,7 @@ router.post("/register", async (req, res, next): Promise<void> => {
     });
 
     res.setHeader("X-Email-Verification-Required", "true");
+    res.setHeader("X-Email-Delivery-Status", emailSent ? "sent" : "skipped");
     sendCreated(res, {
       user: {
         id: user!.id,
@@ -135,6 +137,13 @@ router.post("/register", async (req, res, next): Promise<void> => {
       },
       accessToken,
       expiresAt: sessionExpiry.toISOString(),
+      emailVerificationSent: emailSent,
+      ...(emailSent
+        ? {}
+        : {
+            emailVerificationNote:
+              "Verification email could not be delivered. Use POST /api/v1/auth/resend-verification to retry once SMTP is configured.",
+          }),
     });
   } catch (err) {
     next(err);
@@ -314,6 +323,17 @@ router.post("/verify-email", async (req, res, next): Promise<void> => {
 
 router.post("/forgot-password", async (req, res, next): Promise<void> => {
   try {
+    // Fail fast if email delivery is not configured — the token is useless
+    // without the email, and silently pretending success would leave users
+    // unable to recover their accounts with no indication of why.
+    if (!config.email.smtpHost) {
+      return next(
+        new ServiceUnavailableError(
+          "Email delivery is not currently configured on this server. Password reset is unavailable. Please contact support.",
+        ),
+      );
+    }
+
     const { email } = z.object({ email: z.email() }).parse(req.body);
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -332,12 +352,16 @@ router.post("/forgot-password", async (req, res, next): Promise<void> => {
         expiresAt,
       });
 
-      sendEmail({
+      // sendEmail logs its own errors internally; we await so failures are
+      // visible in server logs rather than silently swallowed.
+      await sendEmail({
         to: user.email,
         ...emailTemplates.passwordReset(resetToken, 60),
-      }).catch(() => {});
+      });
     }
 
+    // Always return the same generic message regardless of whether the
+    // address was found — prevents user-enumeration attacks.
     sendSuccess(res, { message: "If that email is registered, a reset link has been sent." });
   } catch (err) {
     next(err);

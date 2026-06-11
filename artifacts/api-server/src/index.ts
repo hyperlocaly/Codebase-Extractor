@@ -26,24 +26,42 @@ if (!config.email.smtpHost) {
 }
 
 /**
- * Ensure pg_trgm is installed before the server begins accepting search
- * requests.  post-merge.sh runs this via `pnpm --filter @workspace/db
- * run setup:extensions`, but that script may not have executed on a fresh
- * database (e.g. first boot, CI, new developer machine).  Running
- * CREATE EXTENSION IF NOT EXISTS here is idempotent and safe.
+ * Ensure pg_trgm extension AND all required trigram indexes are present
+ * before the server begins accepting search requests.  Each statement is
+ * idempotent (IF NOT EXISTS), so this is safe to run on every boot.
+ *
+ * This replaces the previous post-merge.sh / setup:extensions dependency
+ * so a fresh database, CI environment, or new developer machine all get
+ * full search capability automatically.
  */
-async function ensurePgTrgm(): Promise<void> {
+async function ensureSearchInfrastructure(): Promise<void> {
   const client = await pool.connect();
   try {
+    // 1. Extension (requires superuser on some managed Postgres)
     await client.query("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
     logger.info("pg_trgm extension ready");
+
+    // 2. GIN trigram indexes – idempotent, fast no-op when already present
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS businesses_name_trgm_idx ON businesses USING GIN (name gin_trgm_ops);",
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS businesses_tagline_trgm_idx ON businesses USING GIN (tagline gin_trgm_ops);",
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS locations_name_trgm_idx ON locations USING GIN (name gin_trgm_ops);",
+    );
+
+    logger.info(
+      "Search indexes ready (businesses_name_trgm_idx, businesses_tagline_trgm_idx, locations_name_trgm_idx)",
+    );
   } catch (err) {
-    // Non-fatal: some managed Postgres instances restrict extension creation
-    // to superusers.  Search will fall back to ILIKE-only matching.
+    // Non-fatal: some managed Postgres instances restrict extension/index
+    // creation to superusers.  Search falls back to ILIKE-only matching.
     logger.warn(
       { err },
-      "pg_trgm setup failed — similarity search may be degraded. " +
-        "Run: CREATE EXTENSION IF NOT EXISTS pg_trgm; as a superuser.",
+      "Search infrastructure setup failed — similarity search may be degraded. " +
+        "Run setup:extensions as a superuser: pnpm --filter @workspace/db run setup:extensions",
     );
   } finally {
     client.release();
@@ -57,16 +75,17 @@ const server = app.listen(port, (err) => {
   }
   logger.info({ port }, "Server listening");
 
-  // Ensure search extension is present before workers start processing events
-  // that might trigger search-sync jobs.
-  ensurePgTrgm().then(() => {
+  // Ensure pg_trgm extension + all GIN trigram indexes are present before
+  // workers start processing events that might trigger search-sync jobs.
+  ensureSearchInfrastructure().then(() => {
     startOutboxWorker();
     startJobWorker();
     startScheduler();
   }).catch((startupErr) => {
-    // ensurePgTrgm itself never throws (errors are caught internally), but
-    // guard here to prevent a silent hang if something unexpected occurs.
-    logger.error({ err: startupErr }, "Startup error during pg_trgm check");
+    // ensureSearchInfrastructure itself never throws (errors are caught
+    // internally), but guard here to prevent a silent hang if something
+    // unexpected occurs.
+    logger.error({ err: startupErr }, "Startup error during search infrastructure setup");
     startOutboxWorker();
     startJobWorker();
     startScheduler();
