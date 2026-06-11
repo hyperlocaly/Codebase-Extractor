@@ -1,0 +1,144 @@
+CONTINUE BUCKET B — FINAL VERIFICATION AND CLOSURE
+
+You have already produced multiple audits with conflicting conclusions. Do not implement anything yet.
+
+Objective
+
+Produce a FINAL VERIFIED STATE for Bucket B Blockers 1–3.
+
+Rules
+Do NOT rely on previous reports.
+Do NOT trust prior claims.
+Collect fresh evidence directly from the current codebase.
+Every conclusion must include file path + line numbers + code evidence.
+If a claim was previously reported as fixed, verify it actually exists in the current code.
+If a claim was previously reported as broken, verify it is still broken.
+No assumptions.
+No implementation until verification is complete.
+VERIFY CLAIM A — pg_trgm Startup Protection
+
+Determine whether pg_trgm is now guaranteed after:
+
+Empty database
+API server startup
+No manual commands
+No post-merge execution
+
+Tasks:
+
+Search entire repo for:
+ensurePgTrgm
+CREATE EXTENSION IF NOT EXISTS pg_trgm
+setupExtensions
+setup-extensions
+Identify:
+exact startup path
+exact execution order
+whether startup installs pg_trgm
+whether startup creates indexes
+Provide evidence:
+file paths
+line numbers
+code snippets
+
+Conclusion must be one of:
+
+VERIFIED COMPLETE
+PARTIAL
+NOT FIXED
+VERIFY CLAIM B — Notification Dispatch Bug
+
+Determine whether createNotification() still:
+
+INSERT notification
+then
+SELECT oldest notification
+
+or whether it now uses:
+
+INSERT ... RETURNING
+
+Tasks:
+
+Locate createNotification()
+Show current implementation
+Trace enqueueJob()
+
+Verify:
+
+exact notification ID used
+whether race condition still exists
+
+Conclusion:
+
+VERIFIED FIXED
+PARTIAL
+NOT FIXED
+VERIFY CLAIM C — SMTP Visibility
+
+Verify actual behavior of:
+
+/health
+/healthz
+/readiness
+/api/v1/readyz
+
+Tasks:
+
+Show current endpoint code.
+Show actual response payloads.
+Determine whether email status is exposed.
+Determine whether pg_trgm status is exposed.
+Determine whether monitoring can detect:
+SMTP disabled
+pg_trgm missing
+
+without reading logs.
+
+Conclusion:
+
+VERIFIED COMPLETE
+PARTIAL
+NOT FIXED
+FINAL OUTPUT FORMAT
+CLAIM A
+
+Evidence
+...
+Verdict
+
+CLAIM B
+
+Evidence
+...
+Verdict
+
+CLAIM C
+
+Evidence
+...
+Verdict
+
+BUCKET B STATUS
+
+Blocker 1:
+__%
+
+Blocker 2:
+__%
+
+Blocker 3:
+__%
+
+Overall:
+__%
+
+Remaining Work
+
+List ONLY actual unresolved items proven by evidence.
+
+If no unresolved items exist, explicitly state:
+
+"Bucket B Blockers 1–3 are closed."
+
+After that report is complete, do not implement anything. Wait for approval.
