@@ -1,0 +1,132 @@
+You are operating under BUCKET B CLOSEOUT MODE.
+
+Rules:
+
+1. NO NEW FEATURES.
+2. NO NEW BACKEND AUDITS.
+3. NO NEW INFRASTRUCTURE AUDITS.
+4. NO NEW SECURITY AUDITS.
+5. NO NEW DEPLOYMENT AUDITS.
+6. DO NOT suggest future work.
+7. DO NOT create new backlog items.
+8. DO NOT move to Bucket C or any other bucket.
+9. Work only from evidence that exists in the repository and running application.
+
+Objective:
+
+Close the remaining verified Bucket B gaps and produce evidence.
+
+Current verified state:
+
+* Search infrastructure operational.
+* pg_trgm setup script exists.
+* post-merge wiring exists.
+* UserRegistered event exists.
+* UserRegistered handler exists.
+* Password reset complete.
+* Email verification complete.
+* Notification dispatch bug fixed via insert.returning().
+* SMTP observability documented.
+* Typecheck passing.
+* Server running.
+
+Task:
+
+Perform a FINAL CLOSEOUT VERIFICATION ONLY.
+
+Verification Scope:
+
+A. Search Infrastructure
+
+Verify:
+
+* ensurePgTrgm() exists in startup path.
+* API startup executes pg_trgm verification.
+* /api/v1/readyz reports search readiness.
+* Search routes do not 500.
+* trigram indexes exist.
+
+Produce evidence:
+
+* file paths
+* line numbers
+* startup log excerpts
+* endpoint responses
+
+B. UserRegistered Event
+
+Verify end-to-end with live execution.
+
+Required:
+
+1. Seed marketplace if required.
+2. Register a real test account.
+3. Confirm:
+
+   * email verification token row created
+   * UserRegistered outbox row created
+   * outbox row transitions pending → processing → published
+   * welcome notification row created
+   * notification dispatch job receives the correct notification id
+
+Evidence required:
+
+* DB rows
+* IDs
+* timestamps
+* status transitions
+
+No code changes unless verification fails.
+
+C. SMTP Observability
+
+Verify:
+
+* startup warning appears when SMTP absent
+* readiness endpoint exposes SMTP state if implemented
+* health endpoints behave as designed
+* documentation matches implementation
+
+Evidence required:
+
+* startup logs
+* endpoint responses
+
+Output Format:
+
+SECTION 1 — VERIFIED COMPLETE
+
+List only items proven with evidence.
+
+SECTION 2 — FAILED VERIFICATIONS
+
+List anything that could not be proven.
+
+SECTION 3 — CODE CHANGES
+
+If no changes were required, explicitly state:
+
+"NO CODE CHANGES REQUIRED"
+
+SECTION 4 — FINAL BUCKET B STATUS
+
+Provide:
+
+Blocker 1 %
+Blocker 2 %
+Blocker 3 %
+Overall %
+
+SECTION 5 — RECOMMENDATION
+
+Only one of:
+
+A. "BUCKET B CLOSED"
+
+or
+
+B. "BUCKET B NOT CLOSED"
+
+No additional recommendations.
+
+Stop after the report.
